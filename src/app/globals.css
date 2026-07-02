@@ -1,0 +1,75 @@
+/* @import url() FONT IMPORTS MUST ALWAYS BE AT THE VERY TOP OF THIS FILE, ABOVE THE TAILWIND IMPORTS — DO NOT DELETE THIS COMMENT */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+
+/* CRITICAL: THE FOLLOWING TAILWIND IMPORTS MUST NEVER BE DELETED OR REORDERED — DO NOT DELETE THIS COMMENT */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* END TAILWIND IMPORTS — ALL OTHER CSS MUST GO BELOW THIS LINE */
+
+@layer base {
+  html,
+  body {
+    overflow-x: hidden;
+  }
+
+  body {
+    @apply font-sans text-cherry-text bg-[#FAF8F5] antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif text-cherry-dark;
+  }
+}
+
+/* Custom scrollbar for a polished look */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #fdf8f8;
+}
+::-webkit-scrollbar-thumb {
+  background: #e3b1b5;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #ce838a;
+}
+
+/* Hide scrollbar for category carousel */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Search overlay smooth transitions */
+.search-overlay-enter {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+.search-overlay-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: all 0.2s ease-out;
+}
+
+/* ── Admin Panel Utilities ──────────────────────────────────────────────────── */
+@layer components {
+  .admin-label {
+    @apply block text-sm font-medium text-cherry-dark mb-1.5;
+  }
+
+  .admin-input {
+    @apply w-full px-4 py-2.5 rounded-xl border border-cherry-200 bg-cherry-50/40 text-cherry-dark text-sm
+           placeholder:text-cherry-300 focus:outline-none focus:border-cherry-500 focus:ring-2 focus:ring-cherry-200
+           transition-all;
+  }
+
+  .admin-input:is(textarea) {
+    @apply py-3;
+  }
+}
