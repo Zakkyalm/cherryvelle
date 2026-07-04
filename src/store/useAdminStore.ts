@@ -5,6 +5,24 @@ import { persist } from 'zustand/middleware';
 
 export type ProductSection = 'trending' | 'just-launched' | 'deals' | 'bestsellers';
 
+// ─── Shop by Concern ──────────────────────────────────────────────────────────
+
+export interface Concern {
+  id: string;
+  name: string;
+}
+
+export const DEFAULT_CONCERNS: Concern[] = [
+  { id: 'acne',         name: 'Acne & Blemishes' },
+  { id: 'aging',        name: 'Anti-Aging' },
+  { id: 'dryness',      name: 'Dryness' },
+  { id: 'pigmentation', name: 'Pigmentation' },
+  { id: 'sensitivity',  name: 'Sensitive Skin' },
+  { id: 'dullness',     name: 'Dull Skin' },
+  { id: 'dark-circles', name: 'Dark Circles' },
+  { id: 'pores',        name: 'Large Pores' },
+];
+
 // Maps LTO theme key → Tailwind bg gradient classes (used in preview & frontend)
 export const LTO_THEME_MAP: Record<string, { bg: string; accent: string }> = {
   cherry:   { bg: 'from-cherry-700 via-cherry-600 to-cherry-800', accent: 'text-cherry-goldLight' },
@@ -36,6 +54,7 @@ export interface AdminProduct {
   description: string;
   isNew?: boolean;
   sections?: ProductSection[];
+  concerns?: string[]; // concern IDs from the concerns list
   createdAt?: string; // ISO date string e.g. "2024-12-01"
 }
 
@@ -238,6 +257,7 @@ interface AdminState {
   promoBarMessages: PromoBarMessage[];
   promoBanners: PromoBanner[];
   categories: Category[];
+  concerns: Concern[];
 
   // Products
   addProduct: (p: Omit<AdminProduct, 'id'>) => void;
@@ -245,6 +265,11 @@ interface AdminState {
   deleteProduct: (id: string) => void;
   assignSection: (productId: string, section: ProductSection) => void;
   removeSection: (productId: string, section: ProductSection) => void;
+
+  // Concerns
+  addConcern: (c: Omit<Concern, 'id'>) => void;
+  updateConcern: (id: string, c: Partial<Concern>) => void;
+  deleteConcern: (id: string) => void;
 
   // Hero banners
   addHeroBanner: (b: Omit<HeroBanner, 'id'>) => void;
@@ -294,6 +319,7 @@ export const useAdminStore = create<AdminState>()(
       promoBarMessages: defaultPromoBarMessages,
       promoBanners: defaultPromoBanners,
       categories: defaultCategories,
+      concerns: DEFAULT_CONCERNS,
       videos: defaultVideos,
       limitedTimeOffers: defaultLimitedTimeOffers,
 
@@ -351,6 +377,15 @@ export const useAdminStore = create<AdminState>()(
       addCategory: (c) => set((s) => ({ categories: [...s.categories, { ...c, id: c.name.toLowerCase().replace(/\s+/g, '-') + '-' + uid() }] })),
       updateCategory: (id, c) => set((s) => ({ categories: s.categories.map((x) => (x.id === id ? { ...x, ...c } : x)) })),
       deleteCategory: (id) => set((s) => ({ categories: s.categories.filter((x) => x.id !== id) })),
+
+      // Concerns
+      addConcern: (c) => set((s) => ({ concerns: [...s.concerns, { ...c, id: c.name.toLowerCase().replace(/\s+/g, '-') + '-' + uid() }] })),
+      updateConcern: (id, c) => set((s) => ({ concerns: s.concerns.map((x) => (x.id === id ? { ...x, ...c } : x)) })),
+      deleteConcern: (id) => set((s) => ({
+        concerns: s.concerns.filter((x) => x.id !== id),
+        // Remove this concern from all products
+        products: s.products.map((p) => ({ ...p, concerns: (p.concerns ?? []).filter((cid) => cid !== id) })),
+      })),
 
       // Videos
       addVideo: (v) => set((s) => ({ videos: [...s.videos, { ...v, id: `vid${uid()}` }] })),

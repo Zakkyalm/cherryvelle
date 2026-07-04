@@ -15,7 +15,6 @@ import {
   Video,
   Layers,
   AlertCircle,
-  BarChart2,
 } from 'lucide-react';
 
 const navItems = [
@@ -25,7 +24,6 @@ const navItems = [
   { label: 'Products', href: '/admin/products', icon: Package },
   { label: 'Sections', href: '/admin/sections', icon: Layers },
   { label: 'Videos', href: '/admin/videos', icon: Video },
-  { label: 'Reports', href: '/admin/reports', icon: BarChart2 },
 ];
 
 interface AdminSidebarProps {

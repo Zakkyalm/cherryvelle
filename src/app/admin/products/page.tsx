@@ -5,7 +5,7 @@ import { Plus, Pencil, Trash2, Package, Search, Star, Grid3X3, X, ChevronDown, C
 import { AdminShell } from '@/components/admin/AdminShell';
 import { AdminModal } from '@/components/admin/AdminModal';
 import { ImageUpload } from '@/components/admin/ImageUpload';
-import { useAdminStore, AdminProduct, Category, getStockStatus } from '@/store/useAdminStore';
+import { useAdminStore, AdminProduct, Category, Concern, getStockStatus } from '@/store/useAdminStore';
 
 const emptyProduct: Omit<AdminProduct, 'id'> = {
   name: '',
@@ -20,15 +20,18 @@ const emptyProduct: Omit<AdminProduct, 'id'> = {
   category: '',
   description: '',
   isNew: false,
+  concerns: [],
 };
 
 const emptyCategory: Omit<Category, 'id'> = { name: '', count: 0, image: '', imageAlt: '' };
+const emptyConcern: Omit<Concern, 'id'> = { name: '' };
 
 export default function ProductsPage() {
   const {
     products, categories,
     addProduct, updateProduct, deleteProduct,
     addCategory, updateCategory, deleteCategory,
+    concerns, addConcern, updateConcern, deleteConcern,
   } = useAdminStore();
 
   // ── Product modal state ──────────────────────────────────────────────────
@@ -51,6 +54,13 @@ export default function ProductsPage() {
   const [catDeleteTarget, setCatDeleteTarget] = useState<string | null>(null);
   const [catModalOpen, setCatModalOpen] = useState(false);
 
+  // ── Concern management (inline inside product modal) ──────────────────────
+  const [concernPanelOpen, setConcernPanelOpen] = useState(false);
+  const [concernEditing, setConcernEditing] = useState<Concern | null>(null);
+  const [concernForm, setConcernForm] = useState<Omit<Concern, 'id'>>(emptyConcern);
+  const [concernDeleteTarget, setConcernDeleteTarget] = useState<string | null>(null);
+  const [concernModalOpen, setConcernModalOpen] = useState(false);
+
   // ── Helpers ──────────────────────────────────────────────────────────────
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 2500); };
 
@@ -58,13 +68,15 @@ export default function ProductsPage() {
     setEditing(null);
     setForm({ ...emptyProduct, category: categories[0]?.name ?? '' });
     setCatPanelOpen(false);
+    setConcernPanelOpen(false);
     setModalOpen(true);
   };
 
   const openEdit = (p: AdminProduct) => {
     setEditing(p);
-    setForm({ name: p.name, price: p.price, originalPrice: p.originalPrice, rating: p.rating, reviews: p.reviews, stock: p.stock, lowStockAlert: p.lowStockAlert ?? 5, image: p.image, imageAlt: p.imageAlt, category: p.category, description: p.description, isNew: p.isNew });
+    setForm({ name: p.name, price: p.price, originalPrice: p.originalPrice, rating: p.rating, reviews: p.reviews, stock: p.stock, lowStockAlert: p.lowStockAlert ?? 5, image: p.image, imageAlt: p.imageAlt, category: p.category, description: p.description, isNew: p.isNew, concerns: p.concerns ?? [] });
     setCatPanelOpen(false);
+    setConcernPanelOpen(false);
     setModalOpen(true);
   };
 
@@ -100,6 +112,40 @@ export default function ProductsPage() {
     deleteCategory(id);
     setCatDeleteTarget(null);
     showToast('Category deleted');
+  };
+
+  // Concern CRUD
+  const openAddConcern = () => { setConcernEditing(null); setConcernForm(emptyConcern); setConcernModalOpen(true); };
+  const openEditConcern = (c: Concern) => { setConcernEditing(c); setConcernForm({ name: c.name }); setConcernModalOpen(true); };
+
+  const handleSaveConcern = () => {
+    if (!concernForm.name.trim()) return;
+    if (concernEditing) {
+      updateConcern(concernEditing.id, concernForm);
+      showToast('Concern updated');
+    } else {
+      addConcern(concernForm);
+      showToast('Concern added');
+    }
+    setConcernModalOpen(false);
+  };
+
+  const handleDeleteConcern = (id: string) => {
+    deleteConcern(id);
+    setConcernDeleteTarget(null);
+    // Remove from current form if selected
+    setForm(f => ({ ...f, concerns: (f.concerns ?? []).filter(cid => cid !== id) }));
+    showToast('Concern deleted');
+  };
+
+  const toggleFormConcern = (id: string) => {
+    setForm(f => {
+      const current = f.concerns ?? [];
+      return {
+        ...f,
+        concerns: current.includes(id) ? current.filter(c => c !== id) : [...current, id],
+      };
+    });
   };
 
   // ── Derived lists ────────────────────────────────────────────────────────
@@ -462,6 +508,92 @@ export default function ProductsPage() {
               <p className="text-xs text-cherry-300 mt-1">Mark as Low Stock when quantity ≤ this value</p>
             </div>
 
+            {/* ── Shop by Concern ─────────────────────────────────────────── */}
+            <div className="sm:col-span-2">
+              <div className="flex items-center justify-between mb-1">
+                <label className="admin-label mb-0">Shop by Concern</label>
+                <button
+                  type="button"
+                  onClick={() => setConcernPanelOpen(v => !v)}
+                  className="inline-flex items-center gap-1 text-xs text-cherry-500 hover:text-cherry-700 font-medium transition-colors"
+                >
+                  <Grid3X3 className="w-3.5 h-3.5" />
+                  Manage concerns
+                  {concernPanelOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                </button>
+              </div>
+
+              {/* Checkbox grid */}
+              {concerns.length === 0 ? (
+                <p className="text-xs text-cherry-300 py-2">No concerns yet. Click "Manage concerns" to add one.</p>
+              ) : (
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-1">
+                  {concerns.map(c => (
+                    <label key={c.id} className="flex items-center gap-2 cursor-pointer group">
+                      <input
+                        type="checkbox"
+                        checked={(form.concerns ?? []).includes(c.id)}
+                        onChange={() => toggleFormConcern(c.id)}
+                        className="w-4 h-4 accent-cherry-700 flex-shrink-0"
+                      />
+                      <span className="text-sm text-cherry-dark group-hover:text-cherry-700 transition-colors truncate">{c.name}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+
+              {/* Inline concern management panel */}
+              {concernPanelOpen && (
+                <div className="mt-3 border border-cherry-100 rounded-xl overflow-hidden">
+                  {/* Panel header */}
+                  <div className="flex items-center justify-between px-4 py-2.5 bg-cherry-50/60 border-b border-cherry-100">
+                    <span className="text-xs font-semibold text-cherry-600 uppercase tracking-wide">Concerns ({concerns.length})</span>
+                    <button
+                      type="button"
+                      onClick={openAddConcern}
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-cherry-700 hover:text-cherry-900 transition-colors"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> New concern
+                    </button>
+                  </div>
+
+                  {/* Concern list */}
+                  {concerns.length === 0 ? (
+                    <div className="px-4 py-6 text-center text-xs text-cherry-300">
+                      No concerns yet. Click "New concern" to add one.
+                    </div>
+                  ) : (
+                    <ul className="divide-y divide-cherry-50 max-h-52 overflow-y-auto">
+                      {concerns.map(c => (
+                        <li key={c.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-cherry-50/40">
+                          <span className="flex-1 text-sm font-medium text-cherry-dark truncate">{c.name}</span>
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => openEditConcern(c)}
+                              className="p-1 rounded-md hover:bg-blue-50 text-slate-400 hover:text-slate-600 transition-colors"
+                              aria-label="Edit concern"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setConcernDeleteTarget(c.id)}
+                              className="p-1 rounded-md hover:bg-red-50 text-red-400 hover:text-red-600 transition-colors"
+                              aria-label="Delete concern"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
+            {/* ── End Shop by Concern ────────────────────────────────────── */}
+
             {/* Image */}
             <div className="sm:col-span-2">
               <ImageUpload label="Product Image" required value={form.image} onChange={(v) => setForm({ ...form, image: v })} altValue={form.imageAlt} onAltChange={(v) => setForm({ ...form, imageAlt: v })} altPlaceholder="e.g. Cherryvelle Vitamin C Serum product image" previewHeight="h-40" />
@@ -541,6 +673,38 @@ export default function ProductsPage() {
         <div className="flex gap-3">
           <button onClick={() => setCatDeleteTarget(null)} className="flex-1 py-2.5 border border-cherry-200 text-cherry-text rounded-xl text-sm font-medium hover:bg-cherry-50">Cancel</button>
           <button onClick={() => catDeleteTarget && handleDeleteCategory(catDeleteTarget)} className="flex-1 py-2.5 bg-red-500 text-white rounded-xl text-sm font-semibold hover:bg-red-600">Delete</button>
+        </div>
+      </AdminModal>
+
+      {/* ── Add / Edit Concern Modal ───────────────────────────────────────── */}
+      <AdminModal open={concernModalOpen} onClose={() => setConcernModalOpen(false)} title={concernEditing ? 'Edit Concern' : 'Add Concern'}>
+        <div className="space-y-4">
+          <div>
+            <label className="admin-label">Concern Name *</label>
+            <input
+              className="admin-input"
+              placeholder="e.g. Acne & Blemishes"
+              value={concernForm.name}
+              onChange={(e) => setConcernForm({ name: e.target.value })}
+            />
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button onClick={() => setConcernModalOpen(false)} className="flex-1 py-2.5 border border-cherry-200 text-cherry-text rounded-xl text-sm font-medium hover:bg-cherry-50">Cancel</button>
+            <button onClick={handleSaveConcern} disabled={!concernForm.name.trim()} className="flex-1 py-2.5 bg-cherry-700 text-white rounded-xl text-sm font-semibold hover:bg-cherry-800 disabled:opacity-50">
+              {concernEditing ? 'Save Changes' : 'Add Concern'}
+            </button>
+          </div>
+        </div>
+      </AdminModal>
+
+      {/* ── Delete concern confirm ─────────────────────────────────────────── */}
+      <AdminModal open={!!concernDeleteTarget} onClose={() => setConcernDeleteTarget(null)} title="Delete Concern?" size="sm">
+        <p className="text-sm text-cherry-text mb-5">
+          This will permanently remove <strong>{concerns.find(c => c.id === concernDeleteTarget)?.name}</strong>. Products assigned to this concern will be unlinked automatically.
+        </p>
+        <div className="flex gap-3">
+          <button onClick={() => setConcernDeleteTarget(null)} className="flex-1 py-2.5 border border-cherry-200 text-cherry-text rounded-xl text-sm font-medium hover:bg-cherry-50">Cancel</button>
+          <button onClick={() => concernDeleteTarget && handleDeleteConcern(concernDeleteTarget)} className="flex-1 py-2.5 bg-red-500 text-white rounded-xl text-sm font-semibold hover:bg-red-600">Delete</button>
         </div>
       </AdminModal>
     </AdminShell>

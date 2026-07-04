@@ -96,17 +96,30 @@ export function Footer() {
 
         </div>
 
-        <div className="pt-8 border-t border-cherry-200 text-center md:flex md:justify-between md:text-left">
-          <p className="text-sm text-cherry-text">
-            &copy; {new Date().getFullYear()} Cherryvelle Cosmetics. All rights reserved.
-          </p>
-          <div className="mt-4 md:mt-0 flex justify-center space-x-6">
-            <Link href="/privacy" className="text-sm text-cherry-text hover:text-cherry-700">
+        <div className="pt-8 border-t border-cherry-200">
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-center">
+            <p className="text-sm text-cherry-text whitespace-nowrap">
+              &copy; {new Date().getFullYear()} Cherryvelle Cosmetics. All rights reserved.
+            </p>
+            <Link href="/privacy" className="text-sm text-cherry-text hover:text-cherry-700 whitespace-nowrap">
               Privacy Policy
             </Link>
-            <Link href="/terms" className="text-sm text-cherry-text hover:text-cherry-700">
+            <Link href="/terms" className="text-sm text-cherry-text hover:text-cherry-700 whitespace-nowrap">
               Terms of Service
             </Link>
+            <span className="text-cherry-text/40 hidden sm:inline">·</span>
+            <p className="text-sm text-cherry-text/60 tracking-wide whitespace-nowrap">
+              Designed &amp; Developed by{' '}
+              <a
+                href="https://vynoq.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold transition-colors duration-300 hover:opacity-80"
+                style={{ color: '#800020' }}
+              >
+                Vynoq.com
+              </a>
+            </p>
           </div>
         </div>
       </div>
