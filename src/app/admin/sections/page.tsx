@@ -79,6 +79,7 @@ export default function SectionsPage() {
 
   // ── Section tab actions ─────────────────────────────────────────────────────
   const startEdit = (key: string, label: string) => {
+    setActiveSection(key);
     setEditingKey(key);
     setEditValue(label);
     setDeleteConfirmKey(null);
@@ -153,7 +154,11 @@ export default function SectionsPage() {
                 <>
                   <input
                     ref={editInputRef}
-                    className="w-32 bg-white/20 text-white placeholder-white/60 text-sm border-b border-white/50 outline-none px-0.5"
+                    className={`w-32 text-sm outline-none px-0.5 border-b ${
+                      isActive
+                        ? 'bg-white/20 text-white placeholder-white/60 border-white/50'
+                        : 'bg-transparent text-cherry-dark placeholder-cherry-300 border-cherry-400'
+                    }`}
                     value={editValue}
                     onChange={(e) => setEditValue(e.target.value)}
                     onKeyDown={(e) => {
@@ -163,14 +168,14 @@ export default function SectionsPage() {
                   />
                   <button
                     onClick={commitEdit}
-                    className="p-0.5 rounded hover:bg-white/20"
+                    className={`p-0.5 rounded ${isActive ? 'hover:bg-white/20 text-white' : 'hover:bg-cherry-50 text-cherry-600'}`}
                     title="Save"
                   >
                     <Check className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={cancelEdit}
-                    className="p-0.5 rounded hover:bg-white/20"
+                    className={`p-0.5 rounded ${isActive ? 'hover:bg-white/20 text-white' : 'hover:bg-cherry-50 text-cherry-400'}`}
                     title="Cancel"
                   >
                     <X className="w-3.5 h-3.5" />
