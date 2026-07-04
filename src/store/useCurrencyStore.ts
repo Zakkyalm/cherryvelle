@@ -45,12 +45,14 @@ export const DEFAULT_CURRENCIES: CurrencyConfig[] = [
   },
 ];
 
-export type AdminRole = 'super_admin' | 'content_manager' | 'viewer';
+export type AdminRole = string; // was: 'super_admin' | 'content_manager' | 'viewer'
 
 export interface RolePermission {
   role: AdminRole;
   label: string;
   description: string;
+  /** Built-in roles (super_admin, content_manager, viewer) cannot be deleted */
+  isBuiltIn?: boolean;
   permissions: {
     manageProducts: boolean;
     manageBanners: boolean;
@@ -66,6 +68,7 @@ export const DEFAULT_ROLE_PERMISSIONS: RolePermission[] = [
     role: 'super_admin',
     label: 'Super Admin',
     description: 'Full access to all features and settings',
+    isBuiltIn: true,
     permissions: {
       manageProducts: true,
       manageBanners: true,
@@ -79,6 +82,7 @@ export const DEFAULT_ROLE_PERMISSIONS: RolePermission[] = [
     role: 'content_manager',
     label: 'Content Manager',
     description: 'Can manage content but not settings or reports',
+    isBuiltIn: true,
     permissions: {
       manageProducts: true,
       manageBanners: true,
@@ -92,6 +96,7 @@ export const DEFAULT_ROLE_PERMISSIONS: RolePermission[] = [
     role: 'viewer',
     label: 'Viewer',
     description: 'Read-only access to all sections',
+    isBuiltIn: true,
     permissions: {
       manageProducts: false,
       manageBanners: false,
@@ -130,6 +135,9 @@ interface CurrencyState {
     permission: keyof RolePermission['permissions'],
     value: boolean
   ) => void;
+  addRole: (role: Omit<RolePermission, 'role' | 'isBuiltIn'> & { role?: string }) => void;
+  updateRole: (role: AdminRole, updates: Pick<RolePermission, 'label' | 'description'>) => void;
+  deleteRole: (role: AdminRole) => void;
 
   // Helpers
   getCurrencyConfig: (code?: CurrencyCode) => CurrencyConfig;
@@ -141,7 +149,7 @@ export const useCurrencyStore = create<CurrencyState>()(
     (set, get) => ({
       selectedCurrency: 'INR',
       hasSelectedCurrency: false,
-      autoDetect: true,
+      autoDetect: false,
       currencies: DEFAULT_CURRENCIES,
       rolePermissions: DEFAULT_ROLE_PERMISSIONS,
 
@@ -173,6 +181,35 @@ export const useCurrencyStore = create<CurrencyState>()(
               ? { ...rp, permissions: { ...rp.permissions, [permission]: value } }
               : rp
           ),
+        })),
+
+      addRole: (newRole) => {
+        const uid = () => Math.random().toString(36).slice(2, 9);
+        const roleKey = newRole.role
+          ? newRole.role
+          : newRole.label.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '') + '_' + uid();
+        set((s) => ({
+          rolePermissions: [
+            ...s.rolePermissions,
+            {
+              ...newRole,
+              role: roleKey,
+              isBuiltIn: false,
+            } as RolePermission,
+          ],
+        }));
+      },
+
+      updateRole: (role, updates) =>
+        set((s) => ({
+          rolePermissions: s.rolePermissions.map((rp) =>
+            rp.role === role ? { ...rp, ...updates } : rp
+          ),
+        })),
+
+      deleteRole: (role) =>
+        set((s) => ({
+          rolePermissions: s.rolePermissions.filter((rp) => rp.role !== role || rp.isBuiltIn),
         })),
 
       getCurrencyConfig: (code) => {

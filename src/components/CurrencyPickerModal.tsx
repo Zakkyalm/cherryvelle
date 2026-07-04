@@ -2,25 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Globe, MapPin, X, CheckCircle2 } from 'lucide-react';
+import { Globe, X, CheckCircle2 } from 'lucide-react';
 import { useCurrencyStore, CurrencyCode } from '@/store/useCurrencyStore';
-
-/** Maps country code → currency code for the 3 supported countries */
-const COUNTRY_TO_CURRENCY: Record<string, CurrencyCode> = {
-  IN: 'INR',
-  US: 'USD',
-  LK: 'LKR',
-};
-
-async function detectCountryCode(): Promise<string | null> {
-  try {
-    const res = await fetch('https://ipapi.co/json/');
-    const data = await res.json();
-    return data?.country_code ?? null;
-  } catch {
-    return null;
-  }
-}
 
 export function CurrencyPickerModal() {
   const {
@@ -33,34 +16,53 @@ export function CurrencyPickerModal() {
   } = useCurrencyStore();
 
   const [visible, setVisible] = useState(false);
-  const [detecting, setDetecting] = useState(false);
-  const [detectedCode, setDetectedCode] = useState<string | null>(null);
 
   const enabledCurrencies = getEnabledCurrencies();
 
   useEffect(() => {
-    // Only show if the user hasn't chosen yet
-    if (hasSelectedCurrency) return;
+    // If the user already made a selection in this session, never show again
+    if (hasSelectedCurrency) {
+      setVisible(false);
+      return;
+    }
 
-    // Small delay so the loading screen finishes first
-    const timer = setTimeout(async () => {
-      if (autoDetect) {
-        setDetecting(true);
-        const country = await detectCountryCode();
-        setDetectedCode(country);
-        setDetecting(false);
+    if (autoDetect) {
+      // Auto-detect mode: fetch the user's country from ipapi.co and map to a currency
+      const controller = new AbortController();
 
-        if (country && COUNTRY_TO_CURRENCY[country]) {
-          // Auto-select and skip showing the modal
-          selectCurrency(COUNTRY_TO_CURRENCY[country]);
-          return;
-        }
-      }
-      setVisible(true);
-    }, 1200);
+      fetch('https://ipapi.co/json/', { signal: controller.signal })
+        .then((res) => res.json())
+        .then((data: { country_code?: string }) => {
+          const countryCode = data?.country_code;
+          if (countryCode) {
+            // Find a matching enabled currency for this country
+            const match = currencies.find(
+              (c) => c.enabled && c.countryCodes.includes(countryCode)
+            );
+            if (match) {
+              // Auto-select and skip the popup entirely
+              selectCurrency(match.code);
+              return;
+            }
+          }
+          // No match found — fall back to the picker
+          setTimeout(() => setVisible(true), 1200);
+        })
+        .catch(() => {
+          // Network error or aborted — fall back to the picker
+          setTimeout(() => setVisible(true), 1200);
+        });
 
-    return () => clearTimeout(timer);
-  }, [hasSelectedCurrency, autoDetect, selectCurrency]);
+      return () => controller.abort();
+    } else {
+      // Manual mode: always show the picker so the user can choose
+      const timer = setTimeout(() => {
+        setVisible(true);
+      }, 1200);
+
+      return () => clearTimeout(timer);
+    }
+  }, [hasSelectedCurrency, autoDetect, currencies, selectCurrency]);
 
   const handleSelect = (code: CurrencyCode) => {
     selectCurrency(code);
@@ -122,13 +124,6 @@ export function CurrencyPickerModal() {
                   <X className="w-4 h-4" />
                 </button>
               </div>
-
-              {detecting && (
-                <div className="flex items-center gap-2 text-sm text-cherry-text mb-4 px-1">
-                  <MapPin className="w-4 h-4 text-cherry-500 animate-pulse" />
-                  Detecting your location…
-                </div>
-              )}
 
               {/* Currency options */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

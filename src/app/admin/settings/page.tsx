@@ -16,12 +16,18 @@ import {
   ToggleLeft,
   ToggleRight,
   Info,
+  Plus,
+  Trash2,
+  Pencil,
+  Lock,
 } from 'lucide-react';
 import { AdminShell } from '@/components/admin/AdminShell';
+import { AdminModal } from '@/components/admin/AdminModal';
 import {
   useCurrencyStore,
   CurrencyCode,
   AdminRole,
+  RolePermission,
   DEFAULT_CURRENCIES,
 } from '@/store/useCurrencyStore';
 
@@ -34,10 +40,25 @@ const PERMISSION_LABELS: Record<string, string> = {
   manageSettings: 'Manage Settings',
 };
 
-const ROLE_COLOURS: Record<AdminRole, string> = {
+const BUILT_IN_ROLE_COLOURS: Record<string, string> = {
   super_admin: 'bg-cherry-100 text-cherry-800 border-cherry-200',
   content_manager: 'bg-blue-50 text-blue-700 border-blue-200',
   viewer: 'bg-gray-100 text-gray-700 border-gray-200',
+};
+const CUSTOM_ROLE_COLOUR = 'bg-purple-50 text-purple-700 border-purple-200';
+
+function getRoleColour(role: AdminRole, isBuiltIn?: boolean): string {
+  if (isBuiltIn) return BUILT_IN_ROLE_COLOURS[role] ?? CUSTOM_ROLE_COLOUR;
+  return CUSTOM_ROLE_COLOUR;
+}
+
+const EMPTY_PERMISSIONS: RolePermission['permissions'] = {
+  manageProducts: false,
+  manageBanners: false,
+  manageVideos: false,
+  managePromoBar: false,
+  manageSections: false,
+  manageSettings: false,
 };
 
 export default function SettingsPage() {
@@ -49,19 +70,37 @@ export default function SettingsPage() {
     updateCurrencyRate,
     setAutoDetect,
     updateRolePermission,
+    addRole,
+    updateRole,
+    deleteRole,
   } = useCurrencyStore();
 
   const [activeTab, setActiveTab] = useState<'currency' | 'roles'>('currency');
   const [savedBanner, setSavedBanner] = useState(false);
   const [expandedRole, setExpandedRole] = useState<AdminRole | null>('super_admin');
+
+  // Currency editing
   const [editingRate, setEditingRate] = useState<CurrencyCode | null>(null);
   const [draftRate, setDraftRate] = useState('');
+
+  // Role modals
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingRoleKey, setEditingRoleKey] = useState<AdminRole | null>(null);
+  const [deleteConfirmRole, setDeleteConfirmRole] = useState<AdminRole | null>(null);
+
+  // Create / Edit form state
+  const [roleForm, setRoleForm] = useState({
+    label: '',
+    description: '',
+    permissions: { ...EMPTY_PERMISSIONS },
+  });
 
   const showSaved = () => {
     setSavedBanner(true);
     setTimeout(() => setSavedBanner(false), 2500);
   };
 
+  // ── Currency helpers ─────────────────────────────────────────────────────
   const handleSaveRate = (code: CurrencyCode) => {
     const parsed = parseFloat(draftRate);
     if (!isNaN(parsed) && parsed > 0) {
@@ -71,16 +110,45 @@ export default function SettingsPage() {
     setEditingRate(null);
     setDraftRate('');
   };
-
-  const handleCancelRate = () => {
-    setEditingRate(null);
-    setDraftRate('');
+  const handleCancelRate = () => { setEditingRate(null); setDraftRate(''); };
+  const handleResetCurrencies = () => {
+    DEFAULT_CURRENCIES.forEach((c) => updateCurrencyRate(c.code, c.rateFromINR));
+    showSaved();
   };
 
-  const handleResetCurrencies = () => {
-    DEFAULT_CURRENCIES.forEach((c) => {
-      updateCurrencyRate(c.code, c.rateFromINR);
-    });
+  // ── Role helpers ──────────────────────────────────────────────────────────
+  const openCreateModal = () => {
+    setRoleForm({ label: '', description: '', permissions: { ...EMPTY_PERMISSIONS } });
+    setShowCreateModal(true);
+  };
+
+  const openEditModal = (rp: RolePermission) => {
+    setEditingRoleKey(rp.role);
+    setRoleForm({ label: rp.label, description: rp.description, permissions: { ...rp.permissions } });
+  };
+
+  const handleCreateRole = () => {
+    if (!roleForm.label.trim()) return;
+    addRole({ label: roleForm.label.trim(), description: roleForm.description.trim(), permissions: roleForm.permissions });
+    setShowCreateModal(false);
+    showSaved();
+  };
+
+  const handleUpdateRole = () => {
+    if (!editingRoleKey || !roleForm.label.trim()) return;
+    updateRole(editingRoleKey, { label: roleForm.label.trim(), description: roleForm.description.trim() });
+    // Also save any permission changes made in the edit form
+    const permKeys = Object.keys(roleForm.permissions) as (keyof RolePermission['permissions'])[];
+    permKeys.forEach((k) => updateRolePermission(editingRoleKey, k, roleForm.permissions[k]));
+    setEditingRoleKey(null);
+    showSaved();
+  };
+
+  const handleDeleteRole = () => {
+    if (!deleteConfirmRole) return;
+    deleteRole(deleteConfirmRole);
+    if (expandedRole === deleteConfirmRole) setExpandedRole(null);
+    setDeleteConfirmRole(null);
     showSaved();
   };
 
@@ -95,7 +163,6 @@ export default function SettingsPage() {
       )}
 
       <div className="max-w-7xl mx-auto">
-
         {/* Page header */}
         <div className="flex items-center gap-3 mb-5">
           <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-cherry-100 flex items-center justify-center flex-shrink-0">
@@ -107,14 +174,12 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Tab bar — full width on mobile, capped on desktop */}
+        {/* Tab bar */}
         <div className="flex gap-1 bg-cherry-50 p-1 rounded-xl mb-5 w-full sm:max-w-md">
           <button
             onClick={() => setActiveTab('currency')}
             className={`flex items-center gap-2 px-3 sm:px-5 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all flex-1 justify-center ${
-              activeTab === 'currency'
-                ? 'bg-white text-cherry-dark shadow-sm'
-                : 'text-cherry-text hover:text-cherry-dark'
+              activeTab === 'currency' ? 'bg-white text-cherry-dark shadow-sm' : 'text-cherry-text hover:text-cherry-dark'
             }`}
           >
             <Globe className="w-4 h-4 flex-shrink-0" />
@@ -123,9 +188,7 @@ export default function SettingsPage() {
           <button
             onClick={() => setActiveTab('roles')}
             className={`flex items-center gap-2 px-3 sm:px-5 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all flex-1 justify-center ${
-              activeTab === 'roles'
-                ? 'bg-white text-cherry-dark shadow-sm'
-                : 'text-cherry-text hover:text-cherry-dark'
+              activeTab === 'roles' ? 'bg-white text-cherry-dark shadow-sm' : 'text-cherry-text hover:text-cherry-dark'
             }`}
           >
             <ShieldCheck className="w-4 h-4 flex-shrink-0" />
@@ -136,10 +199,7 @@ export default function SettingsPage() {
         {/* ── CURRENCY TAB ── */}
         {activeTab === 'currency' && (
           <div className="flex flex-col lg:flex-row gap-5 items-start">
-
-            {/* Main column */}
             <div className="w-full lg:flex-1 min-w-0 space-y-4">
-
               {/* Auto-detect card */}
               <div className="bg-white rounded-2xl border border-cherry-100 p-4 sm:p-5">
                 <div className="flex items-start justify-between gap-3">
@@ -150,151 +210,71 @@ export default function SettingsPage() {
                     <div className="min-w-0">
                       <h3 className="font-semibold text-cherry-dark text-sm">Auto-detect Currency</h3>
                       <p className="text-xs text-cherry-text mt-1 leading-relaxed">
-                        Automatically detect the customer&apos;s country and select the matching
-                        currency. If detection fails, the currency picker popup will appear.
+                        Automatically detect the customer&apos;s country and select the matching currency. If detection fails, the currency picker popup will appear.
                       </p>
                     </div>
                   </div>
-                  {/* Touch-friendly toggle — min 44px tap target */}
-                  <button
-                    onClick={() => { setAutoDetect(!autoDetect); showSaved(); }}
-                    className="flex-shrink-0 p-1 -mr-1 mt-0.5 touch-manipulation"
-                    aria-label="Toggle auto-detect"
-                  >
-                    {autoDetect ? (
-                      <ToggleRight className="w-9 h-9 sm:w-10 sm:h-10 text-cherry-700" />
-                    ) : (
-                      <ToggleLeft className="w-9 h-9 sm:w-10 sm:h-10 text-cherry-300" />
-                    )}
+                  <button onClick={() => { setAutoDetect(!autoDetect); showSaved(); }} className="flex-shrink-0 p-1 -mr-1 mt-0.5 touch-manipulation" aria-label="Toggle auto-detect">
+                    {autoDetect ? <ToggleRight className="w-9 h-9 sm:w-10 sm:h-10 text-cherry-700" /> : <ToggleLeft className="w-9 h-9 sm:w-10 sm:h-10 text-cherry-300" />}
                   </button>
                 </div>
                 {autoDetect && (
                   <div className="mt-4 flex items-start gap-2 text-xs text-amber-700 bg-amber-50 rounded-xl px-3 sm:px-4 py-3 border border-amber-100">
                     <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-                    <span className="leading-relaxed">
-                      Auto-detection uses ipapi.co. If the user&apos;s country doesn&apos;t match INR,
-                      USD, or LKR, the picker popup will still appear.
-                    </span>
+                    <span className="leading-relaxed">Auto-detection uses ipapi.co. If the user&apos;s country doesn&apos;t match INR, USD, or LKR, the picker popup will still appear.</span>
                   </div>
                 )}
               </div>
 
-              {/* Currency list card */}
+              {/* Currency list */}
               <div className="bg-white rounded-2xl border border-cherry-100 overflow-hidden">
-                {/* Card header */}
                 <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-3.5 sm:py-4 border-b border-cherry-100">
                   <div className="min-w-0">
                     <h3 className="font-semibold text-cherry-dark text-sm">Supported Currencies</h3>
-                    <p className="text-xs text-cherry-text mt-0.5">
-                      Enable / disable and set exchange rates{' '}
-                      <span className="font-medium text-cherry-dark">(base: INR = 1)</span>
-                    </p>
+                    <p className="text-xs text-cherry-text mt-0.5">Enable / disable and set exchange rates <span className="font-medium text-cherry-dark">(base: INR = 1)</span></p>
                   </div>
-                  <button
-                    onClick={handleResetCurrencies}
-                    className="flex items-center gap-1.5 text-xs text-cherry-text hover:text-cherry-dark bg-cherry-50 hover:bg-cherry-100 px-3 py-2 rounded-lg transition-colors flex-shrink-0 touch-manipulation"
-                  >
+                  <button onClick={handleResetCurrencies} className="flex items-center gap-1.5 text-xs text-cherry-text hover:text-cherry-dark bg-cherry-50 hover:bg-cherry-100 px-3 py-2 rounded-lg transition-colors flex-shrink-0 touch-manipulation">
                     <RefreshCw className="w-3.5 h-3.5" />
                     <span className="hidden xs:inline">Reset Rates</span>
                     <span className="xs:hidden">Reset</span>
                   </button>
                 </div>
-
-                {/* Currency rows */}
                 <div className="divide-y divide-cherry-50">
                   {currencies.map((c) => (
                     <div key={c.code} className="px-4 sm:px-5 py-4">
-
-                      {/* Name row */}
                       <div className="flex items-center gap-3">
-                        <span className="text-xl sm:text-2xl leading-none w-7 sm:w-8 text-center flex-shrink-0">
-                          {c.flag}
-                        </span>
+                        <span className="text-xl sm:text-2xl leading-none w-7 sm:w-8 text-center flex-shrink-0">{c.flag}</span>
                         <div className="flex-1 min-w-0">
                           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                             <span className="font-semibold text-cherry-dark text-sm">{c.code}</span>
                             <span className="text-xs text-cherry-text">{c.name}</span>
-                            {!c.enabled && (
-                              <span className="text-[10px] bg-red-50 text-red-500 border border-red-100 px-1.5 py-0.5 rounded-full font-medium">
-                                Disabled
-                              </span>
-                            )}
-                            {c.code === 'INR' && (
-                              <span className="text-[10px] text-cherry-500 font-medium">Base currency</span>
-                            )}
+                            {!c.enabled && <span className="text-[10px] bg-red-50 text-red-500 border border-red-100 px-1.5 py-0.5 rounded-full font-medium">Disabled</span>}
+                            {c.code === 'INR' && <span className="text-[10px] text-cherry-500 font-medium">Base currency</span>}
                           </div>
                           <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
-                            <span className="text-xs text-cherry-text">
-                              Symbol:{' '}
-                              <span className="font-mono font-semibold text-cherry-dark">{c.symbol}</span>
-                            </span>
-                            {c.code !== 'INR' && (
-                              <span className="text-xs text-cherry-text">
-                                1 INR ={' '}
-                                <span className="font-medium text-cherry-dark">
-                                  {c.rateFromINR} {c.code}
-                                </span>
-                              </span>
-                            )}
+                            <span className="text-xs text-cherry-text">Symbol: <span className="font-mono font-semibold text-cherry-dark">{c.symbol}</span></span>
+                            {c.code !== 'INR' && <span className="text-xs text-cherry-text">1 INR = <span className="font-medium text-cherry-dark">{c.rateFromINR} {c.code}</span></span>}
                           </div>
                         </div>
-                        {/* Toggle — 44px touch target */}
-                        <button
-                          onClick={() => { toggleCurrencyEnabled(c.code as CurrencyCode); showSaved(); }}
-                          aria-label={`${c.enabled ? 'Disable' : 'Enable'} ${c.code}`}
-                          className="flex-shrink-0 p-1 -mr-1 touch-manipulation"
-                        >
-                          {c.enabled ? (
-                            <ToggleRight className="w-8 h-8 text-cherry-700" />
-                          ) : (
-                            <ToggleLeft className="w-8 h-8 text-cherry-300" />
-                          )}
+                        <button onClick={() => { toggleCurrencyEnabled(c.code as CurrencyCode); showSaved(); }} aria-label={`${c.enabled ? 'Disable' : 'Enable'} ${c.code}`} className="flex-shrink-0 p-1 -mr-1 touch-manipulation">
+                          {c.enabled ? <ToggleRight className="w-8 h-8 text-cherry-700" /> : <ToggleLeft className="w-8 h-8 text-cherry-300" />}
                         </button>
                       </div>
-
-                      {/* Rate editor — no left indent on mobile to avoid overflow */}
                       {c.code !== 'INR' && (
                         <div className="mt-3 sm:ml-10">
                           {editingRate === c.code ? (
                             <div className="flex items-center gap-2 flex-wrap">
-                              <input
-                                type="number"
-                                step="0.001"
-                                min="0.001"
-                                value={draftRate}
-                                onChange={(e) => setDraftRate(e.target.value)}
+                              <input type="number" step="0.001" min="0.001" value={draftRate} onChange={(e) => setDraftRate(e.target.value)}
                                 className="w-28 text-sm px-3 py-2 border border-cherry-300 rounded-lg focus:outline-none focus:border-cherry-500 focus:ring-1 focus:ring-cherry-500"
                                 autoFocus
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') handleSaveRate(c.code as CurrencyCode);
-                                  if (e.key === 'Escape') handleCancelRate();
-                                }}
+                                onKeyDown={(e) => { if (e.key === 'Enter') handleSaveRate(c.code as CurrencyCode); if (e.key === 'Escape') handleCancelRate(); }}
                               />
-                              <button
-                                onClick={() => handleSaveRate(c.code as CurrencyCode)}
-                                className="flex items-center gap-1 text-xs text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-2 rounded-lg transition-colors font-medium touch-manipulation"
-                              >
-                                <Check className="w-3.5 h-3.5" />
-                                Save
-                              </button>
-                              <button
-                                onClick={handleCancelRate}
-                                className="flex items-center gap-1 text-xs text-cherry-text bg-cherry-50 hover:bg-cherry-100 border border-cherry-200 px-3 py-2 rounded-lg transition-colors font-medium touch-manipulation"
-                              >
-                                <X className="w-3.5 h-3.5" />
-                                Cancel
-                              </button>
+                              <button onClick={() => handleSaveRate(c.code as CurrencyCode)} className="flex items-center gap-1 text-xs text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-2 rounded-lg transition-colors font-medium touch-manipulation"><Check className="w-3.5 h-3.5" />Save</button>
+                              <button onClick={handleCancelRate} className="flex items-center gap-1 text-xs text-cherry-text bg-cherry-50 hover:bg-cherry-100 border border-cherry-200 px-3 py-2 rounded-lg transition-colors font-medium touch-manipulation"><X className="w-3.5 h-3.5" />Cancel</button>
                             </div>
                           ) : (
-                            <button
-                              onClick={() => {
-                                setEditingRate(c.code as CurrencyCode);
-                                setDraftRate(String(c.rateFromINR));
-                              }}
-                              className="flex items-center gap-1.5 text-xs text-cherry-text hover:text-cherry-dark bg-cherry-50 hover:bg-cherry-100 border border-cherry-100 px-3 py-2 rounded-lg transition-colors touch-manipulation"
-                            >
-                              <Edit2 className="w-3 h-3" />
-                              Edit Rate
+                            <button onClick={() => { setEditingRate(c.code as CurrencyCode); setDraftRate(String(c.rateFromINR)); }} className="flex items-center gap-1.5 text-xs text-cherry-text hover:text-cherry-dark bg-cherry-50 hover:bg-cherry-100 border border-cherry-100 px-3 py-2 rounded-lg transition-colors touch-manipulation">
+                              <Edit2 className="w-3 h-3" />Edit Rate
                             </button>
                           )}
                         </div>
@@ -305,55 +285,28 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {/* Sidebar — stacks below on mobile, floats right on desktop */}
+            {/* Sidebar */}
             <div className="w-full lg:w-72 xl:w-80 flex-shrink-0 space-y-4">
-
-              {/* How currency works */}
               <div className="bg-white rounded-2xl border border-cherry-100 px-4 sm:px-5 py-4 sm:py-5">
-                <div className="flex items-center gap-2 mb-3">
-                  <Info className="w-4 h-4 text-cherry-500 flex-shrink-0" />
-                  <p className="font-semibold text-cherry-dark text-sm">How currency works</p>
-                </div>
+                <div className="flex items-center gap-2 mb-3"><Info className="w-4 h-4 text-cherry-500 flex-shrink-0" /><p className="font-semibold text-cherry-dark text-sm">How currency works</p></div>
                 <ul className="space-y-2 text-xs text-cherry-text">
-                  {[
-                    'All base prices are stored in INR.',
-                    'Exchange rates are applied client-side at display time.',
-                    'Customers select their currency via a popup on first visit.',
-                    'The selection is saved in localStorage and persists across sessions.',
-                    'If auto-detect is on, customers matching IN / US / LK are auto-assigned.',
-                    'Disabling a currency removes it from the customer picker.',
-                  ].map((item) => (
-                    <li key={item} className="flex items-start gap-2">
-                      <span className="mt-1.5 w-1 h-1 rounded-full bg-cherry-400 flex-shrink-0" />
-                      {item}
-                    </li>
+                  {['All base prices are stored in INR.','Exchange rates are applied client-side at display time.','Customers select their currency via a popup on first visit.','The selection is saved in localStorage and persists across sessions.','If auto-detect is on, customers matching IN / US / LK are auto-assigned.','Disabling a currency removes it from the customer picker.'].map((item) => (
+                    <li key={item} className="flex items-start gap-2"><span className="mt-1.5 w-1 h-1 rounded-full bg-cherry-400 flex-shrink-0" />{item}</li>
                   ))}
                 </ul>
               </div>
-
-              {/* Quick stats — 2-col grid on mobile, list on desktop sidebar */}
               <div className="bg-white rounded-2xl border border-cherry-100 px-4 sm:px-5 py-4 sm:py-5">
                 <p className="font-semibold text-cherry-dark text-sm mb-3">Currency Summary</p>
                 <div className="grid grid-cols-2 lg:grid-cols-1 gap-3">
-                  {[
-                    { label: 'Total', value: currencies.length, colour: 'text-cherry-dark' },
-                    { label: 'Enabled', value: currencies.filter((c) => c.enabled).length, colour: 'text-emerald-600' },
-                    { label: 'Disabled', value: currencies.filter((c) => !c.enabled).length, colour: 'text-red-500' },
-                  ].map(({ label, value, colour }) => (
-                    <div key={label} className="flex items-center justify-between lg:flex-row gap-1">
-                      <span className="text-xs text-cherry-text">{label}</span>
-                      <span className={`text-sm font-semibold ${colour}`}>{value}</span>
-                    </div>
+                  {[{ label: 'Total', value: currencies.length, colour: 'text-cherry-dark' },{ label: 'Enabled', value: currencies.filter((c) => c.enabled).length, colour: 'text-emerald-600' },{ label: 'Disabled', value: currencies.filter((c) => !c.enabled).length, colour: 'text-red-500' }].map(({ label, value, colour }) => (
+                    <div key={label} className="flex items-center justify-between lg:flex-row gap-1"><span className="text-xs text-cherry-text">{label}</span><span className={`text-sm font-semibold ${colour}`}>{value}</span></div>
                   ))}
                   <div className="flex items-center justify-between col-span-2 lg:col-span-1">
                     <span className="text-xs text-cherry-text">Auto-detect</span>
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${autoDetect ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
-                      {autoDetect ? 'On' : 'Off'}
-                    </span>
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${autoDetect ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>{autoDetect ? 'On' : 'Off'}</span>
                   </div>
                 </div>
               </div>
-
             </div>
           </div>
         )}
@@ -361,61 +314,80 @@ export default function SettingsPage() {
         {/* ── ROLES TAB ── */}
         {activeTab === 'roles' && (
           <div className="flex flex-col lg:flex-row gap-5 items-start">
-
             {/* Main column */}
             <div className="w-full lg:flex-1 min-w-0 space-y-4">
 
-              {/* Warning banner */}
-              <div className="bg-amber-50 border border-amber-100 rounded-2xl px-4 sm:px-5 py-4 flex items-start gap-3">
-                <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-600" />
-                <p className="text-xs text-amber-800 leading-relaxed">
-                  Role permissions are stored locally and enforced on the admin panel UI.
-                  Since this project uses localStorage-based auth, ensure your deployment
-                  restricts the admin route at the server level for production use.
-                </p>
+              {/* Warning + Create button row */}
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+                <div className="flex-1 bg-amber-50 border border-amber-100 rounded-2xl px-4 sm:px-5 py-4 flex items-start gap-3">
+                  <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-600" />
+                  <p className="text-xs text-amber-800 leading-relaxed">
+                    Role permissions are stored locally and enforced on the admin panel UI.
+                    Since this project uses localStorage-based auth, ensure your deployment restricts the admin route at the server level for production use.
+                  </p>
+                </div>
+                <button
+                  onClick={openCreateModal}
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-cherry-700 hover:bg-cherry-800 text-white text-sm font-medium rounded-xl transition-colors shadow-sm shadow-cherry-700/25 whitespace-nowrap flex-shrink-0"
+                >
+                  <Plus className="w-4 h-4" />
+                  New Role
+                </button>
               </div>
 
               {rolePermissions.map((rp) => {
                 const isExpanded = expandedRole === rp.role;
                 const permKeys = Object.keys(rp.permissions) as (keyof typeof rp.permissions)[];
                 const enabledCount = permKeys.filter((k) => k in PERMISSION_LABELS && rp.permissions[k]).length;
+                const isSuperAdmin = rp.role === 'super_admin';
 
                 return (
-                  <div
-                    key={rp.role}
-                    className="bg-white rounded-2xl border border-cherry-100 overflow-hidden"
-                  >
-                    {/* Role header — touch-friendly */}
-                    <button
-                      onClick={() => setExpandedRole(isExpanded ? null : rp.role)}
-                      className="w-full flex items-center justify-between px-4 sm:px-5 py-4 text-left hover:bg-cherry-50/60 active:bg-cherry-50 transition-colors gap-3 touch-manipulation"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
+                  <div key={rp.role} className="bg-white rounded-2xl border border-cherry-100 overflow-hidden">
+                    {/* Role header */}
+                    <div className="flex items-center gap-2 px-4 sm:px-5 py-4">
+                      <button
+                        onClick={() => setExpandedRole(isExpanded ? null : rp.role)}
+                        className="flex-1 flex items-center gap-3 text-left min-w-0"
+                      >
                         <div className="w-8 h-8 rounded-lg bg-cherry-50 flex items-center justify-center flex-shrink-0">
-                          <ShieldCheck className="w-4 h-4 text-cherry-400" />
+                          {isSuperAdmin ? <Lock className="w-4 h-4 text-cherry-600" /> : <ShieldCheck className="w-4 h-4 text-cherry-400" />}
                         </div>
-                        <div className="min-w-0">
+                        <div className="flex-1 min-w-0">
                           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                             <span className="font-semibold text-cherry-dark text-sm">{rp.label}</span>
-                            <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full border ${ROLE_COLOURS[rp.role]}`}>
-                              {rp.role.replace('_', ' ')}
+                            <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full border ${getRoleColour(rp.role, rp.isBuiltIn)}`}>
+                              {rp.isBuiltIn ? rp.role.replace('_', ' ') : 'custom'}
                             </span>
                           </div>
-                          {/* Allow wrapping on mobile instead of truncating */}
-                          <p className="text-xs text-cherry-text mt-0.5 line-clamp-2 sm:truncate">{rp.description}</p>
+                          <p className="text-xs text-cherry-text mt-0.5 line-clamp-2 sm:truncate">{rp.description || <span className="italic opacity-60">No description</span>}</p>
                         </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <span className="text-xs text-cherry-text bg-cherry-50 border border-cherry-100 px-2 py-1 rounded-lg whitespace-nowrap">
+                            {enabledCount}/{permKeys.length}
+                          </span>
+                          {isExpanded ? <ChevronUp className="w-4 h-4 text-cherry-400" /> : <ChevronDown className="w-4 h-4 text-cherry-400" />}
+                        </div>
+                      </button>
+
+                      {/* Edit / Delete action buttons */}
+                      <div className="flex items-center gap-1 flex-shrink-0 ml-1">
+                        <button
+                          onClick={() => openEditModal(rp)}
+                          title="Edit role"
+                          className="w-8 h-8 rounded-lg hover:bg-cherry-50 flex items-center justify-center text-cherry-400 hover:text-cherry-700 transition-colors"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => !rp.isBuiltIn && setDeleteConfirmRole(rp.role)}
+                          title={rp.isBuiltIn ? 'Built-in roles cannot be deleted' : 'Delete role'}
+                          disabled={rp.isBuiltIn}
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${rp.isBuiltIn ? 'opacity-30 cursor-not-allowed' : 'hover:bg-red-50 text-cherry-400 hover:text-red-500'}`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <span className="text-xs text-cherry-text bg-cherry-50 border border-cherry-100 px-2 py-1 rounded-lg whitespace-nowrap">
-                          {enabledCount}/{permKeys.length}
-                        </span>
-                        {isExpanded ? (
-                          <ChevronUp className="w-4 h-4 text-cherry-400" />
-                        ) : (
-                          <ChevronDown className="w-4 h-4 text-cherry-400" />
-                        )}
-                      </div>
-                    </button>
+                    </div>
 
                     {/* Permission grid */}
                     {isExpanded && (
@@ -423,77 +395,54 @@ export default function SettingsPage() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5">
                           {permKeys.filter((key) => key in PERMISSION_LABELS).map((key) => {
                             const enabled = rp.permissions[key];
-                            const isSuperAdmin = rp.role === 'super_admin';
                             return (
-                              <div
-                                key={key}
-                                className={`flex items-center justify-between gap-3 px-3 sm:px-4 py-3 rounded-xl border transition-colors ${
-                                  enabled ? 'bg-cherry-50 border-cherry-200' : 'bg-gray-50 border-gray-200'
-                                }`}
-                              >
-                                <span className="text-sm text-cherry-dark font-medium leading-snug">
-                                  {PERMISSION_LABELS[key]}
-                                </span>
+                              <div key={key} className={`flex items-center justify-between gap-3 px-3 sm:px-4 py-3 rounded-xl border transition-colors ${enabled ? 'bg-cherry-50 border-cherry-200' : 'bg-gray-50 border-gray-200'}`}>
+                                <span className="text-sm text-cherry-dark font-medium leading-snug">{PERMISSION_LABELS[key]}</span>
                                 <button
-                                  onClick={() => {
-                                    if (!isSuperAdmin) {
-                                      updateRolePermission(rp.role, key, !enabled);
-                                      showSaved();
-                                    }
-                                  }}
+                                  onClick={() => { if (!isSuperAdmin) { updateRolePermission(rp.role, key, !enabled); showSaved(); } }}
                                   disabled={isSuperAdmin}
                                   aria-label={`${enabled ? 'Disable' : 'Enable'} ${PERMISSION_LABELS[key]}`}
                                   title={isSuperAdmin ? 'Super Admin always has full access' : undefined}
                                   className={`flex-shrink-0 p-0.5 touch-manipulation ${isSuperAdmin ? 'cursor-not-allowed opacity-60' : ''}`}
                                 >
-                                  {enabled ? (
-                                    <ToggleRight className="w-7 h-7 text-cherry-700" />
-                                  ) : (
-                                    <ToggleLeft className="w-7 h-7 text-cherry-300" />
-                                  )}
+                                  {enabled ? <ToggleRight className="w-7 h-7 text-cherry-700" /> : <ToggleLeft className="w-7 h-7 text-cherry-300" />}
                                 </button>
                               </div>
                             );
                           })}
                         </div>
-                        {rp.role === 'super_admin' && (
-                          <p className="text-xs text-cherry-text pt-1">
-                            Super Admin permissions cannot be modified — this role always has full access.
-                          </p>
+                        {isSuperAdmin && (
+                          <p className="text-xs text-cherry-text pt-1">Super Admin permissions cannot be modified — this role always has full access.</p>
                         )}
                       </div>
                     )}
                   </div>
                 );
               })}
+
+              {/* Empty state */}
+              {rolePermissions.length === 0 && (
+                <div className="bg-white rounded-2xl border border-cherry-100 px-6 py-12 text-center">
+                  <ShieldCheck className="w-10 h-10 text-cherry-200 mx-auto mb-3" />
+                  <p className="text-sm font-medium text-cherry-dark">No roles yet</p>
+                  <p className="text-xs text-cherry-text mt-1">Click &quot;New Role&quot; to create the first role.</p>
+                </div>
+              )}
             </div>
 
             {/* Sidebar */}
             <div className="w-full lg:w-72 xl:w-80 flex-shrink-0 space-y-4">
-
-              {/* Role overview */}
               <div className="bg-white rounded-2xl border border-cherry-100 px-4 sm:px-5 py-4 sm:py-5">
-                <div className="flex items-center gap-2 mb-3">
-                  <Info className="w-4 h-4 text-cherry-500 flex-shrink-0" />
-                  <p className="font-semibold text-cherry-dark text-sm">Role Overview</p>
-                </div>
+                <div className="flex items-center gap-2 mb-3"><Info className="w-4 h-4 text-cherry-500 flex-shrink-0" /><p className="font-semibold text-cherry-dark text-sm">Role Overview</p></div>
                 <div className="space-y-3">
-                  {[
-                    { role: 'super_admin' as AdminRole, label: 'Super Admin', desc: 'Full unrestricted access to all features.' },
-                    { role: 'content_manager' as AdminRole, label: 'Content Manager', desc: 'Can manage content but not settings.' },
-                    { role: 'viewer' as AdminRole, label: 'Viewer', desc: 'Read-only access to the admin panel.' },
-                  ].map((r) => (
+                  {rolePermissions.map((r) => (
                     <div key={r.role} className="flex items-start gap-2.5">
-                      <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full border flex-shrink-0 mt-0.5 ${ROLE_COLOURS[r.role]}`}>
-                        {r.label}
-                      </span>
-                      <p className="text-xs text-cherry-text leading-relaxed">{r.desc}</p>
+                      <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full border flex-shrink-0 mt-0.5 ${getRoleColour(r.role, r.isBuiltIn)}`}>{r.label}</span>
+                      <p className="text-xs text-cherry-text leading-relaxed">{r.description || <span className="italic opacity-50">No description</span>}</p>
                     </div>
                   ))}
                 </div>
               </div>
-
-              {/* Permissions summary */}
               <div className="bg-white rounded-2xl border border-cherry-100 px-4 sm:px-5 py-4 sm:py-5">
                 <p className="font-semibold text-cherry-dark text-sm mb-3">Permissions Summary</p>
                 <div className="space-y-3">
@@ -509,22 +458,159 @@ export default function SettingsPage() {
                           <span className="text-xs text-cherry-text">{enabledCount}/{total}</span>
                         </div>
                         <div className="w-full h-1.5 bg-cherry-100 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-cherry-500 rounded-full transition-all duration-300"
-                            style={{ width: `${pct}%` }}
-                          />
+                          <div className="h-full bg-cherry-500 rounded-full transition-all duration-300" style={{ width: `${pct}%` }} />
                         </div>
                       </div>
                     );
                   })}
                 </div>
               </div>
-
             </div>
           </div>
         )}
-
       </div>
+
+      {/* ── CREATE ROLE MODAL ── */}
+      <AdminModal open={showCreateModal} onClose={() => setShowCreateModal(false)} title="Create New Role" size="md">
+        <div className="space-y-5">
+          <div>
+            <label className="block text-sm font-medium text-cherry-dark mb-1.5">Role Name <span className="text-red-500">*</span></label>
+            <input
+              type="text"
+              value={roleForm.label}
+              onChange={(e) => setRoleForm((f) => ({ ...f, label: e.target.value }))}
+              placeholder="e.g. Marketing Manager"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-cherry-200 text-sm text-cherry-dark focus:outline-none focus:border-cherry-500 focus:ring-2 focus:ring-cherry-200 transition-all"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-cherry-dark mb-1.5">Description</label>
+            <textarea
+              value={roleForm.description}
+              onChange={(e) => setRoleForm((f) => ({ ...f, description: e.target.value }))}
+              placeholder="Briefly describe what this role can do"
+              rows={2}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-cherry-200 text-sm text-cherry-dark focus:outline-none focus:border-cherry-500 focus:ring-2 focus:ring-cherry-200 transition-all resize-none"
+            />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-cherry-dark mb-3">Permissions</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {(Object.keys(EMPTY_PERMISSIONS) as (keyof typeof EMPTY_PERMISSIONS)[]).map((key) => {
+                const enabled = roleForm.permissions[key];
+                return (
+                  <div key={key} className={`flex items-center justify-between gap-3 px-3 py-3 rounded-xl border transition-colors ${enabled ? 'bg-cherry-50 border-cherry-200' : 'bg-gray-50 border-gray-200'}`}>
+                    <span className="text-sm text-cherry-dark font-medium">{PERMISSION_LABELS[key]}</span>
+                    <button
+                      onClick={() => setRoleForm((f) => ({ ...f, permissions: { ...f.permissions, [key]: !enabled } }))}
+                      aria-label={`${enabled ? 'Disable' : 'Enable'} ${PERMISSION_LABELS[key]}`}
+                      className="flex-shrink-0 p-0.5"
+                    >
+                      {enabled ? <ToggleRight className="w-7 h-7 text-cherry-700" /> : <ToggleLeft className="w-7 h-7 text-cherry-300" />}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          <div className="flex gap-3 pt-1">
+            <button onClick={() => setShowCreateModal(false)} className="flex-1 px-4 py-2.5 rounded-xl border border-cherry-200 text-sm font-medium text-cherry-dark hover:bg-cherry-50 transition-colors">Cancel</button>
+            <button
+              onClick={handleCreateRole}
+              disabled={!roleForm.label.trim()}
+              className="flex-1 px-4 py-2.5 rounded-xl bg-cherry-700 hover:bg-cherry-800 text-sm font-medium text-white transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Create Role
+            </button>
+          </div>
+        </div>
+      </AdminModal>
+
+      {/* ── EDIT ROLE MODAL ── */}
+      <AdminModal open={!!editingRoleKey} onClose={() => setEditingRoleKey(null)} title="Edit Role" size="md">
+        {editingRoleKey && (() => {
+          const rp = rolePermissions.find((r) => r.role === editingRoleKey);
+          const isSuperAdmin = editingRoleKey === 'super_admin';
+          return (
+            <div className="space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-cherry-dark mb-1.5">Role Name <span className="text-red-500">*</span></label>
+                <input
+                  type="text"
+                  value={roleForm.label}
+                  onChange={(e) => setRoleForm((f) => ({ ...f, label: e.target.value }))}
+                  disabled={isSuperAdmin}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-cherry-200 text-sm text-cherry-dark focus:outline-none focus:border-cherry-500 focus:ring-2 focus:ring-cherry-200 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-cherry-dark mb-1.5">Description</label>
+                <textarea
+                  value={roleForm.description}
+                  onChange={(e) => setRoleForm((f) => ({ ...f, description: e.target.value }))}
+                  rows={2}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-cherry-200 text-sm text-cherry-dark focus:outline-none focus:border-cherry-500 focus:ring-2 focus:ring-cherry-200 transition-all resize-none"
+                />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-cherry-dark mb-3">Permissions</p>
+                {isSuperAdmin && <p className="text-xs text-cherry-text mb-3 italic">Super Admin always has full access — permissions cannot be modified.</p>}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {(Object.keys(roleForm.permissions) as (keyof typeof roleForm.permissions)[]).filter((k) => k in PERMISSION_LABELS).map((key) => {
+                    const enabled = roleForm.permissions[key];
+                    return (
+                      <div key={key} className={`flex items-center justify-between gap-3 px-3 py-3 rounded-xl border transition-colors ${enabled ? 'bg-cherry-50 border-cherry-200' : 'bg-gray-50 border-gray-200'}`}>
+                        <span className="text-sm text-cherry-dark font-medium">{PERMISSION_LABELS[key]}</span>
+                        <button
+                          onClick={() => { if (!isSuperAdmin) setRoleForm((f) => ({ ...f, permissions: { ...f.permissions, [key]: !enabled } })); }}
+                          disabled={isSuperAdmin}
+                          className={`flex-shrink-0 p-0.5 ${isSuperAdmin ? 'cursor-not-allowed opacity-60' : ''}`}
+                        >
+                          {enabled ? <ToggleRight className="w-7 h-7 text-cherry-700" /> : <ToggleLeft className="w-7 h-7 text-cherry-300" />}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="flex gap-3 pt-1">
+                <button onClick={() => setEditingRoleKey(null)} className="flex-1 px-4 py-2.5 rounded-xl border border-cherry-200 text-sm font-medium text-cherry-dark hover:bg-cherry-50 transition-colors">Cancel</button>
+                <button
+                  onClick={handleUpdateRole}
+                  disabled={!roleForm.label.trim()}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-cherry-700 hover:bg-cherry-800 text-sm font-medium text-white transition-colors shadow-sm disabled:opacity-50"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          );
+        })()}
+      </AdminModal>
+
+      {/* ── DELETE CONFIRM MODAL ── */}
+      <AdminModal open={!!deleteConfirmRole} onClose={() => setDeleteConfirmRole(null)} title="Delete Role" size="sm">
+        {deleteConfirmRole && (() => {
+          const rp = rolePermissions.find((r) => r.role === deleteConfirmRole);
+          return (
+            <div className="space-y-5">
+              <div className="flex justify-center">
+                <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center">
+                  <Trash2 className="w-6 h-6 text-red-500" />
+                </div>
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-semibold text-cherry-dark mb-1">Delete &quot;{rp?.label}&quot;?</p>
+                <p className="text-xs text-cherry-text leading-relaxed">This will permanently remove the role. This action cannot be undone.</p>
+              </div>
+              <div className="flex gap-3">
+                <button onClick={() => setDeleteConfirmRole(null)} className="flex-1 px-4 py-2.5 rounded-xl border border-cherry-200 text-sm font-medium text-cherry-dark hover:bg-cherry-50 transition-colors">Cancel</button>
+                <button onClick={handleDeleteRole} className="flex-1 px-4 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-sm font-medium text-white transition-colors shadow-sm shadow-red-200">Delete</button>
+              </div>
+            </div>
+          );
+        })()}
+      </AdminModal>
     </AdminShell>
   );
 }

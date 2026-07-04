@@ -105,23 +105,25 @@ export default function AdminDashboard() {
     <AdminShell title="Dashboard" subtitle="Welcome back, Administrator">
 
       {/* ── Date Filter Bar ────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5 sm:mb-6">
+        <div className="flex items-center gap-2 min-w-0">
           <CalendarDays className="w-4 h-4 text-cherry-400 flex-shrink-0" />
-          <span className="text-sm font-medium text-cherry-text">
+          <span className="text-sm font-medium text-cherry-text truncate">
             {isFiltered ? 'Showing filtered results' : 'Showing all-time data'}
           </span>
           {isFiltered && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-cherry-100 text-cherry-700 text-xs font-semibold">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-cherry-100 text-cherry-700 text-xs font-semibold flex-shrink-0">
               Active filter
             </span>
           )}
         </div>
-        <DateFilter value={dateFilter} onChange={setDateFilter} />
+        <div className="flex-shrink-0 self-start sm:self-auto">
+          <DateFilter value={dateFilter} onChange={setDateFilter} />
+        </div>
       </div>
 
       {/* ── Stats Grid ────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 mb-8">
         {stats.map((s) => (
           <StatCard key={s.label} icon={s.icon} label={s.label} value={s.value} sub={s.sub} color={s.color} />
         ))}
@@ -129,8 +131,8 @@ export default function AdminDashboard() {
 
       {/* ── No-results notice ─────────────────────────────────────────────── */}
       {isFiltered && filteredProducts.length === 0 && (
-        <div className="mb-6 rounded-2xl border border-cherry-100 bg-cherry-50/50 px-6 py-5 flex items-center gap-3">
-          <CalendarDays className="w-5 h-5 text-cherry-400 flex-shrink-0" />
+        <div className="mb-4 sm:mb-6 rounded-2xl border border-cherry-100 bg-cherry-50/50 px-4 sm:px-6 py-4 sm:py-5 flex items-start sm:items-center gap-3">
+          <CalendarDays className="w-5 h-5 text-cherry-400 flex-shrink-0 mt-0.5 sm:mt-0" />
           <p className="text-sm text-cherry-text">
             No products were added in the selected date range. Try a wider range or{' '}
             <button
@@ -144,24 +146,24 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Quick Actions */}
         <div className="lg:col-span-2">
-          <div className="bg-white rounded-2xl border border-cherry-100 p-6">
+          <div className="bg-white rounded-2xl border border-cherry-100 p-4 sm:p-6">
             <h2 className="text-base font-semibold text-cherry-dark mb-4">Quick Actions</h2>
-            <div className="grid sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {quickLinks.map(({ label, desc, href, icon: Icon, color }) => (
                 <Link
                   key={href}
                   href={href}
-                  className="group flex items-center gap-4 p-4 rounded-xl border border-cherry-100 hover:border-cherry-300 hover:shadow-sm transition-all"
+                  className="group flex items-center gap-3 p-3 sm:p-4 rounded-xl border border-cherry-100 hover:border-cherry-300 hover:shadow-sm transition-all"
                 >
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${color}`}>
-                    <Icon className="w-5 h-5" />
+                  <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${color}`}>
+                    <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-cherry-dark group-hover:text-cherry-700 transition-colors truncate">{label}</p>
-                    <p className="text-xs text-cherry-400 truncate">{desc}</p>
+                    <p className="text-sm font-semibold text-cherry-dark group-hover:text-cherry-700 transition-colors leading-tight">{label}</p>
+                    <p className="text-xs text-cherry-400 mt-0.5 line-clamp-1">{desc}</p>
                   </div>
                   <ArrowRight className="w-4 h-4 text-cherry-300 group-hover:text-cherry-500 group-hover:translate-x-0.5 transition-all flex-shrink-0" />
                 </Link>
@@ -172,12 +174,12 @@ export default function AdminDashboard() {
 
         {/* Recent Products — filtered */}
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-2xl border border-cherry-100 p-6 h-full">
+          <div className="bg-white rounded-2xl border border-cherry-100 p-4 sm:p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-base font-semibold text-cherry-dark">
                 {isFiltered ? 'Filtered Products' : 'Recent Products'}
               </h2>
-              <Link href="/admin/products" className="text-xs text-cherry-500 hover:text-cherry-700 flex items-center gap-1">
+              <Link href="/admin/products" className="text-xs text-cherry-500 hover:text-cherry-700 flex items-center gap-1 flex-shrink-0">
                 View All <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
@@ -191,12 +193,12 @@ export default function AdminDashboard() {
               <div className="space-y-3">
                 {filteredProducts.slice(0, 5).map((p) => (
                   <div key={p.id} className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg overflow-hidden bg-cherry-50 flex-shrink-0 border border-cherry-100">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg overflow-hidden bg-cherry-50 flex-shrink-0 border border-cherry-100">
                       <img src={p.image} alt={p.name} className="w-full h-full object-cover mix-blend-multiply" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-cherry-dark truncate">{p.name}</p>
-                      <p className="text-xs text-cherry-400">{p.category} · ₹{p.price}</p>
+                      <p className="text-xs text-cherry-400 truncate">{p.category} · ₹{p.price}</p>
                     </div>
                     <div className="flex items-center gap-1 text-cherry-gold flex-shrink-0">
                       <Star className="w-3 h-3 fill-current" />
@@ -218,16 +220,16 @@ export default function AdminDashboard() {
         });
         if (lowStockProducts.length === 0) return null;
         return (
-          <div className="mt-6 bg-white rounded-2xl border border-cherry-100 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
+          <div className="mt-4 sm:mt-6 bg-white rounded-2xl border border-cherry-100 p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-4 gap-2">
+              <div className="flex items-center gap-2 min-w-0">
                 <Package className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                <h2 className="text-base font-semibold text-cherry-dark">Low Stock Products</h2>
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 text-xs font-semibold">
+                <h2 className="text-base font-semibold text-cherry-dark truncate">Low Stock Products</h2>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 text-xs font-semibold flex-shrink-0">
                   {lowStockProducts.length} item{lowStockProducts.length !== 1 ? 's' : ''}
                 </span>
               </div>
-              <Link href="/admin/products" className="text-xs text-cherry-500 hover:text-cherry-700 flex items-center gap-1">
+              <Link href="/admin/products" className="text-xs text-cherry-500 hover:text-cherry-700 flex items-center gap-1 flex-shrink-0">
                 Manage <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
@@ -241,17 +243,17 @@ export default function AdminDashboard() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-cherry-dark truncate">{p.name}</p>
-                      <p className="text-xs text-cherry-400">{p.category}</p>
+                      <p className="text-xs text-cherry-400 truncate">{p.category}</p>
                     </div>
-                    <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                    <div className="flex flex-col items-end gap-1 flex-shrink-0 text-right">
                       <span className={`text-sm font-bold ${status === 'out-of-stock' ? 'text-red-500' : 'text-amber-500'}`}>
                         {p.stock} units
                       </span>
                       {status === 'out-of-stock' ? (
-                        <span className="text-[10px] bg-red-50 text-red-600 px-2 py-0.5 rounded-full font-semibold">OUT OF STOCK</span>
+                        <span className="text-[10px] bg-red-50 text-red-600 px-2 py-0.5 rounded-full font-semibold whitespace-nowrap">OUT OF STOCK</span>
                       ) : (
-                        <span className="text-[10px] bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full font-semibold">
-                          LOW STOCK · alert at ≤{p.lowStockAlert ?? 5}
+                        <span className="text-[10px] bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full font-semibold whitespace-nowrap">
+                          LOW · ≤{p.lowStockAlert ?? 5}
                         </span>
                       )}
                     </div>
@@ -264,12 +266,12 @@ export default function AdminDashboard() {
       })()}
 
       {/* Store Overview banner */}
-      <div className="mt-6 bg-gradient-to-r from-cherry-700 to-cherry-800 rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
-        <div className="flex-1">
+      <div className="mt-4 sm:mt-6 bg-gradient-to-r from-cherry-700 to-cherry-800 rounded-2xl p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+        <div className="flex-1 min-w-0">
           <h3 className="text-white font-semibold text-base">
             {isFiltered ? 'Filtered Overview' : 'Store Overview'}
           </h3>
-          <p className="text-white/70 text-sm mt-1">
+          <p className="text-white/70 text-sm mt-1 leading-relaxed">
             {filteredProducts.filter((p) => p.originalPrice).length} products on sale ·{' '}
             {filteredProducts.filter((p) => p.isNew).length} new arrivals ·{' '}
             {categories.length} categories active
@@ -277,7 +279,7 @@ export default function AdminDashboard() {
         </div>
         <Link
           href="/admin/products"
-          className="px-5 py-2.5 bg-white text-cherry-700 rounded-xl text-sm font-semibold hover:bg-cherry-50 transition-colors flex-shrink-0"
+          className="w-full sm:w-auto text-center px-5 py-2.5 bg-white text-cherry-700 rounded-xl text-sm font-semibold hover:bg-cherry-50 transition-colors flex-shrink-0"
         >
           Manage Products
         </Link>

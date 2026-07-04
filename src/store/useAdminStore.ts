@@ -3,7 +3,12 @@ import { persist } from 'zustand/middleware';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type ProductSection = 'trending' | 'just-launched' | 'deals' | 'bestsellers';
+export type ProductSection = string;
+
+export interface SectionDef {
+  key: string;   // slug-like identifier, e.g. "trending"
+  label: string; // display name, e.g. "Trending Now"
+}
 
 // ─── Shop by Concern ──────────────────────────────────────────────────────────
 
@@ -32,11 +37,20 @@ export const LTO_THEME_MAP: Record<string, { bg: string; accent: string }> = {
   sunset:   { bg: 'from-rose-600 via-orange-500 to-rose-700',     accent: 'text-yellow-200' },
 };
 
-export const PRODUCT_SECTIONS: { key: ProductSection; label: string }[] = [
-  { key: 'trending', label: 'Trending Now' },
+/** Legacy constant – kept for any imports that still reference it at build time.
+ *  At runtime, use the `sectionDefs` array from the store instead. */
+export const PRODUCT_SECTIONS: SectionDef[] = [
+  { key: 'trending',      label: 'Trending Now' },
   { key: 'just-launched', label: 'Just Launched' },
-  { key: 'deals', label: 'Deals of the Day' },
-  { key: 'bestsellers', label: 'Bestsellers' },
+  { key: 'deals',         label: 'Deals of the Day' },
+  { key: 'bestsellers',   label: 'Bestsellers' },
+];
+
+const defaultSectionDefs: SectionDef[] = [
+  { key: 'trending',      label: 'Trending Now' },
+  { key: 'just-launched', label: 'Just Launched' },
+  { key: 'deals',         label: 'Deals of the Day' },
+  { key: 'bestsellers',   label: 'Bestsellers' },
 ];
 
 export interface AdminProduct {
@@ -266,6 +280,12 @@ interface AdminState {
   assignSection: (productId: string, section: ProductSection) => void;
   removeSection: (productId: string, section: ProductSection) => void;
 
+  // Section definitions (CRUD for the tab list)
+  sectionDefs: SectionDef[];
+  addSectionDef: (label: string) => void;
+  updateSectionDef: (key: string, label: string) => void;
+  deleteSectionDef: (key: string) => void;
+
   // Concerns
   addConcern: (c: Omit<Concern, 'id'>) => void;
   updateConcern: (id: string, c: Partial<Concern>) => void;
@@ -322,6 +342,7 @@ export const useAdminStore = create<AdminState>()(
       concerns: DEFAULT_CONCERNS,
       videos: defaultVideos,
       limitedTimeOffers: defaultLimitedTimeOffers,
+      sectionDefs: defaultSectionDefs,
 
       // Products
       addProduct: (p) => set((s) => ({
@@ -347,6 +368,26 @@ export const useAdminStore = create<AdminState>()(
               ? { ...x, sections: (x.sections ?? []).filter((sec) => sec !== section) }
               : x
           ),
+        })),
+
+      // Section definitions
+      addSectionDef: (label) =>
+        set((s) => {
+          const key = label.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') + '-' + uid();
+          return { sectionDefs: [...s.sectionDefs, { key, label }] };
+        }),
+      updateSectionDef: (key, label) =>
+        set((s) => ({
+          sectionDefs: s.sectionDefs.map((x) => (x.key === key ? { ...x, label } : x)),
+        })),
+      deleteSectionDef: (key) =>
+        set((s) => ({
+          sectionDefs: s.sectionDefs.filter((x) => x.key !== key),
+          // Also strip this section key from all products
+          products: s.products.map((p) => ({
+            ...p,
+            sections: (p.sections ?? []).filter((sec) => sec !== key),
+          })),
         })),
 
       // Hero banners

@@ -52,25 +52,27 @@ export function AdminShell({ children, title, subtitle }: AdminShellProps) {
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top bar */}
-        <header className="h-16 bg-white border-b border-cherry-100 flex items-center px-4 sm:px-6 gap-4 flex-shrink-0 z-20">
+        <header className="h-14 sm:h-16 bg-white border-b border-cherry-100 flex items-center px-3 sm:px-4 lg:px-6 gap-3 flex-shrink-0 z-20">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="lg:hidden text-cherry-text hover:text-cherry-dark"
+            className="lg:hidden text-cherry-text hover:text-cherry-dark flex-shrink-0 p-1"
+            aria-label="Open menu"
           >
             <Menu className="w-5 h-5" />
           </button>
 
           <div className="flex-1 min-w-0">
-            <h1 className="text-base sm:text-lg font-semibold text-cherry-dark truncate">{title}</h1>
+            <h1 className="text-sm sm:text-base lg:text-lg font-semibold text-cherry-dark truncate">{title}</h1>
             {subtitle && <p className="text-xs text-cherry-400 truncate hidden sm:block">{subtitle}</p>}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
             {/* Profile dropdown */}
             <div className="relative" ref={profileRef}>
               <button
                 onClick={() => setProfileOpen((o) => !o)}
                 className="w-8 h-8 rounded-full bg-gradient-to-br from-cherry-600 to-cherry-800 flex items-center justify-center text-white text-xs font-bold shadow-sm hover:opacity-90 transition-opacity"
+                aria-label="Profile menu"
               >
                 A
               </button>
@@ -94,7 +96,7 @@ export function AdminShell({ children, title, subtitle }: AdminShellProps) {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6 xl:p-8">
           {children}
         </main>
       </div>
