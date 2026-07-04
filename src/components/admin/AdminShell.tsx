@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Menu, Bell } from 'lucide-react';
+import { Menu, LogOut, AlertCircle } from 'lucide-react';
 import { AdminSidebar } from './AdminSidebar';
 
 interface AdminShellProps {
@@ -14,6 +14,9 @@ interface AdminShellProps {
 export function AdminShell({ children, title, subtitle }: AdminShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -23,6 +26,22 @@ export function AdminShell({ children, title, subtitle }: AdminShellProps) {
       router.push('/admin/login');
     }
   }, [router]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setProfileOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('admin_authenticated');
+    router.push('/admin/login');
+  };
 
   if (!mounted) return null;
 
@@ -47,12 +66,29 @@ export function AdminShell({ children, title, subtitle }: AdminShellProps) {
           </div>
 
           <div className="flex items-center gap-3">
-            <button className="relative text-cherry-text hover:text-cherry-dark p-1.5 rounded-lg hover:bg-cherry-50 transition-colors">
-              <Bell className="w-4 h-4" />
-              <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-cherry-500 rounded-full" />
-            </button>
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cherry-600 to-cherry-800 flex items-center justify-center text-white text-xs font-bold shadow-sm">
-              A
+            {/* Profile dropdown */}
+            <div className="relative" ref={profileRef}>
+              <button
+                onClick={() => setProfileOpen((o) => !o)}
+                className="w-8 h-8 rounded-full bg-gradient-to-br from-cherry-600 to-cherry-800 flex items-center justify-center text-white text-xs font-bold shadow-sm hover:opacity-90 transition-opacity"
+              >
+                A
+              </button>
+              {profileOpen && (
+                <div className="absolute right-0 top-full mt-2 w-44 bg-white rounded-xl shadow-xl border border-cherry-100 overflow-hidden z-50">
+                  <div className="px-4 py-3 border-b border-cherry-100">
+                    <p className="text-xs font-semibold text-cherry-dark">Administrator</p>
+                    <p className="text-[10px] text-cherry-400 mt-0.5">admin@cherryvelle.com</p>
+                  </div>
+                  <button
+                    onClick={() => { setProfileOpen(false); setShowLogoutModal(true); }}
+                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors font-medium"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Sign Out
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </header>
@@ -62,6 +98,43 @@ export function AdminShell({ children, title, subtitle }: AdminShellProps) {
           {children}
         </main>
       </div>
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowLogoutModal(false)}
+          />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+            <div className="flex justify-center mb-4">
+              <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center">
+                <AlertCircle className="w-7 h-7 text-red-500" />
+              </div>
+            </div>
+            <div className="text-center mb-6">
+              <h2 className="text-lg font-semibold text-cherry-dark mb-2">Sign Out?</h2>
+              <p className="text-sm text-cherry-text leading-relaxed">
+                Are you sure you want to log out? You will need to sign in again to access the admin panel.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowLogoutModal(false)}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-cherry-200 text-sm font-medium text-cherry-dark hover:bg-cherry-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-red-500 text-sm font-medium text-white hover:bg-red-600 transition-colors shadow-sm shadow-red-200"
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

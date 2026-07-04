@@ -5,12 +5,14 @@ import { Search, X, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { products, categories } from '@/data/mockData';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useCurrency } from '@/hooks/useCurrency';
 
 export function SearchBar() {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { formatPrice } = useCurrency();
 
   // Focus input when search opens
   useEffect(() => {
@@ -237,11 +239,11 @@ export function SearchBar() {
                           </div>
                           <div className="text-right flex-shrink-0">
                             <p className="text-sm font-semibold text-cherry-700">
-                              ₹{product.price}
+                              {formatPrice(product.price)}
                             </p>
                             {product.originalPrice && (
                               <p className="text-xs text-cherry-text/50 line-through">
-                                ₹{product.originalPrice}
+                                {formatPrice(product.originalPrice)}
                               </p>
                             )}
                           </div>

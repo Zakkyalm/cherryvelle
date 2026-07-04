@@ -6,12 +6,14 @@ import Link from 'next/link';
 import { ChevronLeft, CheckCircle } from 'lucide-react';
 import { useCartStore } from '@/store/useCartStore';
 import { PageWrapper } from '@/components/PageWrapper';
+import { useCurrency } from '@/hooks/useCurrency';
 
 export default function CheckoutPage() {
   const { items, getCartTotal, clearCart } = useCartStore();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const { formatPrice } = useCurrency();
 
   const subtotal = getCartTotal();
   const shipping = subtotal > 999 ? 0 : 99;
@@ -32,6 +34,7 @@ export default function CheckoutPage() {
         )
         .join('%0A');
 
+      // WhatsApp message always uses INR (base currency) for clarity
       const message = `Hello Cherryvelle! I would like to place an order:%0A%0A${orderDetails}%0A%0ASubtotal: ₹${subtotal}%0AShipping: ₹${shipping}%0A*Total: ₹${total}*%0A%0APlease confirm my order.`;
 
       // Redirect to WhatsApp
@@ -243,7 +246,7 @@ export default function CheckoutPage() {
                     {isSubmitting ? (
                       <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
                     ) : (
-                      `Place Order - ₹${total}`
+                      `Place Order - ${formatPrice(total)}`
                     )}
                   </button>
                 </form>
@@ -280,7 +283,7 @@ export default function CheckoutPage() {
                           </p>
                         </div>
                         <span className="font-medium text-cherry-dark text-sm">
-                          ₹{item.price * item.quantity}
+                          {formatPrice(item.price * item.quantity)}
                         </span>
                       </div>
                     </div>
@@ -290,15 +293,15 @@ export default function CheckoutPage() {
                 <div className="space-y-3 py-4 border-t border-cherry-100">
                   <div className="flex justify-between text-sm text-cherry-text">
                     <span>Subtotal</span>
-                    <span>₹{subtotal}</span>
+                    <span>{formatPrice(subtotal)}</span>
                   </div>
                   <div className="flex justify-between text-sm text-cherry-text">
                     <span>Shipping</span>
-                    <span>{shipping === 0 ? 'Free' : `₹${shipping}`}</span>
+                    <span>{shipping === 0 ? 'Free' : formatPrice(shipping)}</span>
                   </div>
                   {shipping > 0 && (
                     <p className="text-xs text-cherry-500 text-right">
-                      Add ₹{1000 - subtotal} more for free shipping
+                      Add {formatPrice(1000 - subtotal)} more for free shipping
                     </p>
                   )}
                 </div>
@@ -308,7 +311,7 @@ export default function CheckoutPage() {
                     Total
                   </span>
                   <span className="text-2xl font-semibold text-cherry-dark">
-                    ₹{total}
+                    {formatPrice(total)}
                   </span>
                 </div>
               </div>

@@ -18,12 +18,14 @@ import { products } from '@/data/mockData';
 import { useCartStore } from '@/store/useCartStore';
 import { ProductCard } from '@/components/ProductCard';
 import { PageWrapper } from '@/components/PageWrapper';
+import { useCurrency } from '@/hooks/useCurrency';
 
 export default function ProductDetailPage() {
   const params = useParams<{ id: string }>();
   const id = params.id;
   const [quantity, setQuantity] = useState(1);
   const { addItem, toggleFavorite, isFavorite } = useCartStore();
+  const { formatPrice } = useCurrency();
 
   const product = products.find((p) => p.id === id);
   const relatedProducts = products
@@ -130,16 +132,16 @@ export default function ProductDetailPage() {
 
                 <div className="flex items-baseline gap-3">
                   <span className="text-2xl font-semibold text-cherry-dark">
-                    ₹{product.price}
+                    {formatPrice(product.price)}
                   </span>
                   {product.originalPrice && (
                     <span className="text-lg text-cherry-text line-through">
-                      ₹{product.originalPrice}
+                      {formatPrice(product.originalPrice)}
                     </span>
                   )}
                   {product.originalPrice && (
                     <span className="text-sm font-medium text-cherry-700 bg-cherry-50 px-2 py-1 rounded-md ml-2 border border-cherry-100">
-                      Save ₹{product.originalPrice - product.price}
+                      Save {formatPrice(product.originalPrice - product.price)}
                     </span>
                   )}
                 </div>
@@ -180,7 +182,7 @@ export default function ProductDetailPage() {
                   className="flex-1 py-4 bg-cherry-700 text-white rounded-full font-medium flex items-center justify-center gap-2 hover:bg-cherry-800 transition-colors shadow-lg shadow-cherry-700/20"
                 >
                   <ShoppingBag className="w-5 h-5" />
-                  Add to Cart - ₹{product.price * quantity}
+                  Add to Cart - {formatPrice(product.price * quantity)}
                 </button>
                 <button
                   onClick={() => product && toggleFavorite(product.id)}
@@ -203,7 +205,7 @@ export default function ProductDetailPage() {
                 </div>
                 <div className="flex items-center gap-3 text-sm text-cherry-text">
                   <Truck className="w-5 h-5 text-cherry-gold" />
-                  <span>Free Shipping over ₹999</span>
+                  <span>Free Shipping over {formatPrice(999)}</span>
                 </div>
                 <div className="flex items-center gap-3 text-sm text-cherry-text">
                   <RotateCcw className="w-5 h-5 text-cherry-gold" />

@@ -3,10 +3,59 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { User, ShoppingBag, Menu, X, Heart } from 'lucide-react';
+import { User, ShoppingBag, Menu, X, Heart, Globe, ChevronDown } from 'lucide-react';
 import { useCartStore } from '@/store/useCartStore';
 import { SearchBar } from '@/components/SearchBar';
 import { CategoryBar } from '@/components/CategoryBar';
+import { useCurrencyStore, CurrencyCode } from '@/store/useCurrencyStore';
+
+function CurrencySwitcher() {
+  const { selectedCurrency, selectCurrency, getEnabledCurrencies, getCurrencyConfig } =
+    useCurrencyStore();
+  const [open, setOpen] = useState(false);
+  const enabledCurrencies = getEnabledCurrencies();
+  const current = getCurrencyConfig(selectedCurrency);
+
+  if (enabledCurrencies.length <= 1) return null;
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-1.5 text-cherry-dark hover:text-cherry-gold transition-colors text-xs font-medium"
+        aria-label="Switch currency"
+      >
+        <Globe className="w-4 h-4" />
+        <span>{current.code}</span>
+        <ChevronDown className={`w-3 h-3 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-xl border border-cherry-100 overflow-hidden z-50 min-w-[160px]">
+            {enabledCurrencies.map((c) => (
+              <button
+                key={c.code}
+                onClick={() => { selectCurrency(c.code as CurrencyCode); setOpen(false); }}
+                className={`w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors ${
+                  selectedCurrency === c.code
+                    ? 'bg-cherry-50 text-cherry-dark font-semibold'
+                    : 'text-cherry-text hover:bg-cherry-50 hover:text-cherry-dark'
+                }`}
+              >
+                <div className="text-left">
+                  <p className="font-medium leading-none">{c.code}</p>
+                  <p className="text-[10px] text-cherry-text mt-0.5">{c.symbol}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -98,6 +147,7 @@ export function Navbar() {
 
             {/* Desktop: Search + Icons */}
             <div className="hidden md:flex items-center space-x-4">
+              <CurrencySwitcher />
               <SearchBar />
               <button className="text-cherry-dark hover:text-cherry-gold transition-colors">
                 <User className="w-5 h-5" />
@@ -128,6 +178,7 @@ export function Navbar() {
 
             {/* Mobile: Search + Cart + Menu */}
             <div className="flex items-center md:hidden space-x-3">
+              <CurrencySwitcher />
               <SearchBar />
               <Link href="/favorites" className="text-cherry-dark relative">
                 <Heart className="w-5 h-5" />

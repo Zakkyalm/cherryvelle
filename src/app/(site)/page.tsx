@@ -27,9 +27,11 @@ import { PageWrapper } from '@/components/PageWrapper';
 import { HeroCarousel } from '@/components/HeroCarousel';
 import { motion } from 'framer-motion';
 import { useAdminStore, LTO_THEME_MAP } from '@/store/useAdminStore';
+import { useCurrency } from '@/hooks/useCurrency';
 
 export default function HomePage() {
   const { videos, products, limitedTimeOffers, categories } = useAdminStore();
+  const { formatPrice } = useCurrency();
 
   const bestsellers = products.filter((p) => (p.sections ?? []).includes('bestsellers'));
   const newArrivals = products.filter((p) => (p.sections ?? []).includes('just-launched'));
@@ -54,7 +56,7 @@ export default function HomePage() {
   // Promotional ticker messages
   const promoMessages = [
     { icon: <Tag className="w-3.5 h-3.5 inline-block mr-1.5" />, text: 'Summer Sale LIVE — Up to 40% Off!' },
-    { icon: <Truck className="w-3.5 h-3.5 inline-block mr-1.5" />, text: 'Free Shipping on Orders ₹999+' },
+    { icon: <Truck className="w-3.5 h-3.5 inline-block mr-1.5" />, text: `Free Shipping on Orders ${formatPrice(999)}+` },
     { icon: <Gift className="w-3.5 h-3.5 inline-block mr-1.5" />, text: 'Free Mini Kit on First Order' },
     { icon: <Star className="w-3.5 h-3.5 inline-block mr-1.5 fill-current" />, text: '10,000+ 5-Star Reviews' },
   ];
@@ -85,7 +87,7 @@ export default function HomePage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { icon: <Truck className="w-5 h-5" />, title: 'Free Delivery', sub: 'On orders ₹999+' },
+                { icon: <Truck className="w-5 h-5" />, title: 'Free Delivery', sub: `On orders ${formatPrice(999)}+` },
                 { icon: <ShieldCheck className="w-5 h-5" />, title: '100% Authentic', sub: 'Certified products' },
                 { icon: <RotateCcw className="w-5 h-5" />, title: 'Easy Returns', sub: '7-day policy' },
                 { icon: <Gift className="w-5 h-5" />, title: 'Free Samples', sub: 'With every order' },

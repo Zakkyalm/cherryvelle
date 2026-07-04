@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Heart, ShoppingCart, Star } from 'lucide-react';
 import { Product, useCartStore } from '@/store/useCartStore';
 import { motion } from 'framer-motion';
+import { useCurrency } from '@/hooks/useCurrency';
 
 interface ProductCardProps {
   product: Product;
@@ -12,6 +13,7 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   const { addItem, toggleFavorite, isFavorite } = useCartStore();
   const favorited = isFavorite(product.id);
+  const { formatPrice } = useCurrency();
 
   return (
     <motion.div
@@ -84,11 +86,11 @@ export function ProductCard({ product }: ProductCardProps) {
         <div className="flex items-center justify-between mt-3">
           <div className="flex items-baseline gap-2">
             <span className="font-semibold text-cherry-dark">
-              ₹{product.price}
+              {formatPrice(product.price)}
             </span>
             {product.originalPrice && (
               <span className="text-sm text-cherry-text line-through">
-                ₹{product.originalPrice}
+                {formatPrice(product.originalPrice)}
               </span>
             )}
           </div>

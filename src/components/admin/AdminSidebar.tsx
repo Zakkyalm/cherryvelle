@@ -15,6 +15,7 @@ import {
   Video,
   Layers,
   AlertCircle,
+  Settings,
 } from 'lucide-react';
 
 const navItems = [
@@ -24,6 +25,10 @@ const navItems = [
   { label: 'Products', href: '/admin/products', icon: Package },
   { label: 'Sections', href: '/admin/sections', icon: Layers },
   { label: 'Videos', href: '/admin/videos', icon: Video },
+];
+
+const bottomNavItems = [
+  { label: 'Settings', href: '/admin/settings', icon: Settings },
 ];
 
 interface AdminSidebarProps {
@@ -95,6 +100,30 @@ export function AdminSidebar({ isOpen = true, onClose }: AdminSidebarProps) {
           </p>
           <ul className="space-y-0.5">
             {navItems.map(({ label, href, icon: Icon }) => (
+              <li key={href}>
+                <Link
+                  href={href}
+                  onClick={onClose}
+                  className={`
+                    flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group
+                    ${isActive(href)
+                      ? 'bg-cherry-700 text-white shadow-sm shadow-cherry-700/30'
+                      : 'text-cherry-text hover:bg-cherry-50 hover:text-cherry-dark'}
+                  `}
+                >
+                  <Icon className={`w-4 h-4 flex-shrink-0 ${isActive(href) ? 'text-white' : 'text-cherry-400 group-hover:text-cherry-600'}`} />
+                  {label}
+                  {isActive(href) && <ChevronRight className="w-3.5 h-3.5 ml-auto text-white/70" />}
+                </Link>
+              </li>
+            ))}
+          </ul>
+
+          <p className="text-[10px] font-semibold text-cherry-300 uppercase tracking-widest px-3 mb-2 mt-6">
+            Configuration
+          </p>
+          <ul className="space-y-0.5">
+            {bottomNavItems.map(({ label, href, icon: Icon }) => (
               <li key={href}>
                 <Link
                   href={href}

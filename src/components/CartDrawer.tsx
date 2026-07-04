@@ -6,11 +6,13 @@ import { useCartStore } from '@/store/useCartStore';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useCurrency } from '@/hooks/useCurrency';
 
 export function CartDrawer() {
   const { items, isOpen, closeCart, updateQuantity, removeItem, getCartTotal } =
     useCartStore();
   const router = useRouter();
+  const { formatPrice } = useCurrency();
 
   // Prevent body scroll when cart is open
   useEffect(() => {
@@ -152,8 +154,8 @@ export function CartDrawer() {
                             </button>
                           </div>
                           <span className="font-semibold text-cherry-dark text-sm">
-                            ₹{item.price * item.quantity}
-                          </span>
+                              {formatPrice(item.price * item.quantity)}
+                            </span>
                         </div>
                       </div>
                     </div>
@@ -168,7 +170,7 @@ export function CartDrawer() {
                 <div className="space-y-3 mb-6">
                   <div className="flex justify-between text-sm text-cherry-text">
                     <span>Subtotal</span>
-                    <span>₹{getCartTotal()}</span>
+                    <span>{formatPrice(getCartTotal())}</span>
                   </div>
                   <div className="flex justify-between text-sm text-cherry-text">
                     <span>Shipping</span>
@@ -176,7 +178,7 @@ export function CartDrawer() {
                   </div>
                   <div className="flex justify-between text-base font-semibold text-cherry-dark pt-3 border-t border-cherry-100">
                     <span>Total</span>
-                    <span>₹{getCartTotal()}</span>
+                    <span>{formatPrice(getCartTotal())}</span>
                   </div>
                 </div>
 
