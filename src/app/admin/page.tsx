@@ -105,19 +105,19 @@ export default function AdminDashboard() {
     <AdminShell title="Dashboard" subtitle="Welcome back, Administrator">
 
       {/* ── Date Filter Bar ────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5 sm:mb-6">
+      <div className="flex flex-row items-center justify-between gap-3 mb-5 sm:mb-6">
         <div className="flex items-center gap-2 min-w-0">
           <CalendarDays className="w-4 h-4 text-cherry-400 flex-shrink-0" />
           <span className="text-sm font-medium text-cherry-text truncate">
             {isFiltered ? 'Showing filtered results' : 'Showing all-time data'}
           </span>
           {isFiltered && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-cherry-100 text-cherry-700 text-xs font-semibold flex-shrink-0">
+            <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-cherry-100 text-cherry-700 text-xs font-semibold flex-shrink-0">
               Active filter
             </span>
           )}
         </div>
-        <div className="flex-shrink-0 self-start sm:self-auto">
+        <div className="flex-shrink-0">
           <DateFilter value={dateFilter} onChange={setDateFilter} />
         </div>
       </div>

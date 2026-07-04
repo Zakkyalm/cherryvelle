@@ -52,7 +52,7 @@ export default function PromoBarPage() {
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <p className="text-sm text-cherry-text">{activeMessages.length} of {promoBarMessages.length} messages active</p>
-        <button onClick={openAdd} className="inline-flex items-center gap-2 px-5 py-2.5 bg-cherry-700 text-white rounded-xl text-sm font-semibold hover:bg-cherry-800 transition-colors shadow-sm shadow-cherry-700/25">
+        <button onClick={openAdd} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-cherry-700 text-white rounded-xl text-sm font-semibold hover:bg-cherry-800 transition-colors shadow-sm shadow-cherry-700/25 w-full">
           <Plus className="w-4 h-4" /> Add Message
         </button>
       </div>

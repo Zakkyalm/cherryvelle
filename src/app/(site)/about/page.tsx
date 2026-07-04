@@ -66,7 +66,7 @@ const stats = [
 
 export default function AboutPage() {
   return (
-    <div className="overflow-hidden">
+    <div className="overflow-x-hidden w-full">
 
       {/* ── Hero ── */}
       <section className="relative min-h-[70vh] flex items-center bg-cherry-dark overflow-hidden">
@@ -188,7 +188,7 @@ export default function AboutPage() {
                 </div>
               </div>
               {/* floating badge */}
-              <div className="absolute -bottom-4 -right-4 bg-cherry-700 text-white rounded-2xl px-6 py-4 shadow-xl">
+              <div className="absolute -bottom-4 right-0 bg-cherry-700 text-white rounded-2xl px-6 py-4 shadow-xl">
                 <p className="text-2xl font-serif font-bold">5+ Years</p>
                 <p className="text-white/70 text-xs tracking-wide">of crafting beauty</p>
               </div>

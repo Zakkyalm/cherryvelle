@@ -125,8 +125,8 @@ export function Footer() {
       </div>
 
       {/* Oversized brand wordmark */}
-      <div className="mt-12 w-full overflow-visible select-none px-4" aria-hidden="true">
-        <h2 className="font-sans font-extrabold text-cherry-700 leading-none tracking-tighter text-center whitespace-nowrap text-[clamp(4rem,16vw,14rem)]">
+      <div className="mt-12 w-full overflow-hidden select-none" aria-hidden="true">
+        <h2 className="font-sans font-extrabold text-cherry-700 leading-none tracking-tighter text-center text-[clamp(3rem,14vw,14rem)]">
           Cherryvelle<span className="text-cherry-gold">.</span>
         </h2>
       </div>

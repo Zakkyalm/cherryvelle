@@ -19,7 +19,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
       </AnimatePresence>
 
       {!isLoading && (
-        <div className="flex flex-col min-h-screen bg-[#FAF8F5]">
+        <div className="flex flex-col min-h-screen bg-[#FAF8F5] overflow-x-hidden">
           <Navbar />
           <CartDrawer />
           <CurrencyPickerModal />
