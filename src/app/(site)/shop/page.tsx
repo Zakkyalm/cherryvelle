@@ -11,12 +11,15 @@ import { PageWrapper } from '@/components/PageWrapper';
 export default function ShopPage() {
   const searchParams = useSearchParams();
   const categoryParam = searchParams.get('category') || 'all';
+  const offersParam = searchParams.get('offers') === 'true';
   const [sortBy, setSortBy] = useState('featured');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const filteredProducts = useMemo(() => {
     let result = [...products];
-    if (categoryParam !== 'all') {
+    if (offersParam) {
+      result = result.filter((p) => p.originalPrice && p.originalPrice > p.price);
+    } else if (categoryParam !== 'all') {
       result = result.filter(
         (p) => p.category.toLowerCase() === categoryParam.toLowerCase()
       );
@@ -44,13 +47,16 @@ export default function ShopPage() {
           {/* Header */}
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-serif text-cherry-dark mb-4">
-              {categoryParam === 'all'
+              {offersParam
+                ? 'Offers'
+                : categoryParam === 'all'
                 ? 'All Products'
                 : categories.find((c) => c.id === categoryParam)?.name || 'Products'}
             </h1>
             <p className="text-cherry-text max-w-2xl mx-auto">
-              Discover our full range of skincare products designed to nourish,
-              protect, and enhance your natural beauty.
+              {offersParam
+                ? 'Shop our best deals — products with exclusive discounts just for you.'
+                : 'Discover our full range of skincare products designed to nourish, protect, and enhance your natural beauty.'}
             </p>
           </div>
 

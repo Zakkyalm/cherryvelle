@@ -93,6 +93,10 @@ export interface HeroBanner {
 export interface PromoBarMessage {
   id: string;
   text: string;
+  /** Optional price threshold stored in INR base price.
+   *  When set, `{price}` in `text` is replaced at render time by the
+   *  converted & formatted price in the visitor's selected currency. */
+  priceINR?: number;
   active: boolean;
 }
 
@@ -125,6 +129,20 @@ export interface Category {
   count: number;
   image: string;
   imageAlt: string;
+}
+
+// ─── Feature Bar (Trust/USP Strip) ───────────────────────────────────────────
+
+export interface FeatureItem {
+  id: string;
+  icon: string;   // lucide icon name, e.g. "Truck"
+  title: string;
+  sub: string;
+  /** Optional minimum order threshold stored in INR base price.
+   *  When set, the subtitle is rendered dynamically via the currency system
+   *  instead of using the static `sub` string. */
+  minOrderINR?: number;
+  active: boolean;
 }
 
 export type VideoSlot = 'main' | 'collection-left' | 'collection-right';
@@ -163,7 +181,7 @@ const defaultHeroBanners: HeroBanner[] = [
 
 const defaultPromoBarMessages: PromoBarMessage[] = [
   { id: 'pb1', text: 'Summer Sale LIVE — Up to 40% Off!', active: true },
-  { id: 'pb2', text: 'Free Shipping on Orders ₹999+', active: true },
+  { id: 'pb2', text: 'Free Shipping on Orders {price}+', priceINR: 999, active: true },
   { id: 'pb3', text: 'Free Mini Kit on First Order', active: true },
   { id: 'pb4', text: '10,000+ 5-Star Reviews', active: true },
 ];
@@ -188,6 +206,13 @@ const defaultLimitedTimeOffers: LimitedTimeOffer[] = [
     bgColor: 'cherry',
     active: true,
   },
+];
+
+const defaultFeatureItems: FeatureItem[] = [
+  { id: 'fi1', icon: 'Truck',       title: 'Free Delivery',   sub: 'On orders above',  minOrderINR: 999, active: true },
+  { id: 'fi2', icon: 'ShieldCheck', title: '100% Authentic',  sub: 'Certified products',                 active: true },
+  { id: 'fi3', icon: 'RotateCcw',   title: 'Easy Returns',    sub: '7-day policy',                       active: true },
+  { id: 'fi4', icon: 'Gift',        title: 'Free Samples',    sub: 'With every order',                   active: true },
 ];
 
 const defaultVideos: SiteVideo[] = [
@@ -327,6 +352,14 @@ interface AdminState {
   updateVideo: (id: string, v: Partial<SiteVideo>) => void;
   deleteVideo: (id: string) => void;
   toggleVideo: (id: string) => void;
+
+  // Feature Bar items
+  featureItems: FeatureItem[];
+  addFeatureItem: (f: Omit<FeatureItem, 'id'>) => void;
+  updateFeatureItem: (id: string, f: Partial<FeatureItem>) => void;
+  deleteFeatureItem: (id: string) => void;
+  toggleFeatureItem: (id: string) => void;
+  reorderFeatureItems: (items: FeatureItem[]) => void;
 }
 
 const uid = () => Math.random().toString(36).slice(2, 9);
@@ -343,7 +376,7 @@ export const useAdminStore = create<AdminState>()(
       videos: defaultVideos,
       limitedTimeOffers: defaultLimitedTimeOffers,
       sectionDefs: defaultSectionDefs,
-
+      featureItems: defaultFeatureItems,
       // Products
       addProduct: (p) => set((s) => ({
         products: [
@@ -433,7 +466,13 @@ export const useAdminStore = create<AdminState>()(
       updateVideo: (id, v) => set((s) => ({ videos: s.videos.map((x) => (x.id === id ? { ...x, ...v } : x)) })),
       deleteVideo: (id) => set((s) => ({ videos: s.videos.filter((x) => x.id !== id) })),
       toggleVideo: (id) => set((s) => ({ videos: s.videos.map((x) => (x.id === id ? { ...x, active: !x.active } : x)) })),
-    }),
-    { name: 'admin-store' }
+
+      // Feature Bar items
+      addFeatureItem: (f) => set((s) => ({ featureItems: [...s.featureItems, { ...f, id: `fi${uid()}` }] })),
+      updateFeatureItem: (id, f) => set((s) => ({ featureItems: s.featureItems.map((x) => (x.id === id ? { ...x, ...f } : x)) })),
+      deleteFeatureItem: (id) => set((s) => ({ featureItems: s.featureItems.filter((x) => x.id !== id) })),
+      toggleFeatureItem: (id) => set((s) => ({ featureItems: s.featureItems.map((x) => (x.id === id ? { ...x, active: !x.active } : x)) })),
+      reorderFeatureItems: (items) => set(() => ({ featureItems: items })),
+    }),    { name: 'admin-store' }
   )
 );

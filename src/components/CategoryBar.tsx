@@ -8,9 +8,10 @@ import { motion } from 'framer-motion';
 export function CategoryBar() {
   const searchParams = useSearchParams();
   const activeCategory = searchParams.get('category') || '';
+  const isOffersActive = searchParams.get('offers') === 'true';
 
   return (
-    <div className="w-full bg-white border-b border-cherry-100 hidden md:block">
+    <div className="w-full bg-white border-b border-cherry-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <nav className="flex items-center md:justify-start lg:justify-center gap-1 py-2.5 overflow-x-auto scrollbar-hide">
           <Link
@@ -43,8 +44,12 @@ export function CategoryBar() {
             </motion.div>
           ))}
           <Link
-            href="/shop"
-            className="px-4 py-1.5 text-sm font-semibold rounded-full whitespace-nowrap bg-gradient-to-r from-cherry-gold to-cherry-goldLight text-cherry-dark hover:shadow-md transition-all duration-200 ml-2"
+            href="/shop?offers=true"
+            className={`px-4 py-1.5 text-sm font-semibold rounded-full whitespace-nowrap transition-all duration-200 ml-2 ${
+              isOffersActive
+                ? 'bg-gradient-to-r from-cherry-gold to-cherry-goldLight text-cherry-dark shadow-md ring-2 ring-cherry-gold/50'
+                : 'bg-gradient-to-r from-cherry-gold to-cherry-goldLight text-cherry-dark hover:shadow-md'
+            }`}
           >
             Offers
           </Link>

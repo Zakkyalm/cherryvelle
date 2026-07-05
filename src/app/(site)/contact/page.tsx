@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Phone, MapPin, Clock, Send, Instagram, Facebook, MessageCircle } from 'lucide-react';
+import { Mail, Phone, MapPin, Clock, Send } from 'lucide-react';
+import { FaInstagram, FaFacebook, FaWhatsapp } from 'react-icons/fa';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 28 },
@@ -314,9 +315,9 @@ export default function ContactPage() {
                 <p className="text-cherry-text text-sm mb-6">Stay connected for tips, new arrivals, and community love.</p>
                 <div className="grid grid-cols-3 gap-4">
                   {[
-                    { icon: <Instagram className="w-5 h-5" />, label: 'Instagram', handle: '@cherryvelle', href: '#', color: 'hover:bg-pink-50 hover:border-pink-200 hover:text-pink-600' },
-                    { icon: <Facebook className="w-5 h-5" />, label: 'Facebook', handle: '/cherryvelle', href: '#', color: 'hover:bg-blue-50 hover:border-blue-200 hover:text-blue-600' },
-                    { icon: <MessageCircle className="w-5 h-5" />, label: 'WhatsApp', handle: 'Chat Now', href: 'https://wa.me/1234567890', color: 'hover:bg-green-50 hover:border-green-200 hover:text-green-600' },
+                    { icon: <FaInstagram size={20} />, label: 'Instagram', handle: '@cherryvelle', href: 'https://instagram.com/cherryvelle', color: 'hover:bg-pink-50 hover:border-pink-200 hover:text-pink-600' },
+                    { icon: <FaFacebook size={20} />, label: 'Facebook', handle: '/cherryvelle', href: 'https://facebook.com/cherryvelle', color: 'hover:bg-blue-50 hover:border-blue-200 hover:text-blue-600' },
+                    { icon: <FaWhatsapp size={20} />, label: 'WhatsApp', handle: 'Chat Now', href: 'https://wa.me/1234567890', color: 'hover:bg-green-50 hover:border-green-200 hover:text-green-600' },
                   ].map((s) => (
                     <a
                       key={s.label}

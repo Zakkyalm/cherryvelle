@@ -1,10 +1,20 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
-import { Facebook, Twitter, Instagram, Youtube } from 'lucide-react';
+import { FaInstagram, FaFacebook, FaWhatsapp, FaYoutube } from 'react-icons/fa';
+import PolicyModal from './PolicyModal';
+
+type PolicyType = 'privacy' | 'terms';
 
 export function Footer() {
+  const [activePolicy, setActivePolicy] = useState<PolicyType | null>(null);
+
   return (
+    <>
+    {activePolicy && (
+      <PolicyModal type={activePolicy} onClose={() => setActivePolicy(null)} />
+    )}
     <footer className="pt-16 pb-8 border-t border-cherry-100 mt-auto" style={{ backgroundColor: '#fcf7f3' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 md:grid-cols-3 gap-8 md:gap-12 mb-12">
@@ -21,17 +31,17 @@ export function Footer() {
               natural beauty.
             </p>
             <div className="flex space-x-4 pt-2">
-              <a href="#" className="text-cherry-text hover:text-cherry-700 transition-colors">
-                <Instagram className="w-5 h-5" />
+              <a href="https://instagram.com/cherryvelle" target="_blank" rel="noopener noreferrer" className="text-cherry-text hover:text-cherry-700 transition-colors">
+                <FaInstagram size={20} />
               </a>
-              <a href="#" className="text-cherry-text hover:text-cherry-700 transition-colors">
-                <Facebook className="w-5 h-5" />
+              <a href="https://facebook.com/cherryvelle" target="_blank" rel="noopener noreferrer" className="text-cherry-text hover:text-cherry-700 transition-colors">
+                <FaFacebook size={20} />
               </a>
-              <a href="#" className="text-cherry-text hover:text-cherry-700 transition-colors">
-                <Twitter className="w-5 h-5" />
+              <a href="https://wa.me/447123456789" target="_blank" rel="noopener noreferrer" className="text-cherry-text hover:text-cherry-700 transition-colors">
+                <FaWhatsapp size={20} />
               </a>
-              <a href="#" className="text-cherry-text hover:text-cherry-700 transition-colors">
-                <Youtube className="w-5 h-5" />
+              <a href="https://youtube.com/@cherryvelle" target="_blank" rel="noopener noreferrer" className="text-cherry-text hover:text-cherry-700 transition-colors">
+                <FaYoutube size={20} />
               </a>
             </div>
           </div>
@@ -96,32 +106,7 @@ export function Footer() {
 
         </div>
 
-        <div className="pt-8 border-t border-cherry-200">
-          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-center">
-            <p className="text-sm text-cherry-text whitespace-nowrap">
-              &copy; {new Date().getFullYear()} Cherryvelle Cosmetics. All rights reserved.
-            </p>
-            <Link href="/privacy" className="text-sm text-cherry-text hover:text-cherry-700 whitespace-nowrap">
-              Privacy Policy
-            </Link>
-            <Link href="/terms" className="text-sm text-cherry-text hover:text-cherry-700 whitespace-nowrap">
-              Terms of Service
-            </Link>
-            <span className="text-cherry-text/40 hidden sm:inline">·</span>
-            <p className="text-sm text-cherry-text/60 tracking-wide whitespace-nowrap">
-              Designed &amp; Developed by{' '}
-              <a
-                href="https://vynoq.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-semibold transition-colors duration-300 hover:opacity-80"
-                style={{ color: '#800020' }}
-              >
-                Vynoq.com
-              </a>
-            </p>
-          </div>
-        </div>
+        <div className="pt-8 border-t border-cherry-200" />
       </div>
 
       {/* Oversized brand wordmark */}
@@ -130,6 +115,41 @@ export function Footer() {
           Cherryvelle<span className="text-cherry-gold">.</span>
         </h2>
       </div>
+
+      {/* Copyright — sits directly below the large wordmark */}
+      <div className="mt-4 pb-2 px-4">
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-center">
+          <p className="text-sm text-cherry-text whitespace-nowrap">
+            &copy; {new Date().getFullYear()} Cherryvelle Cosmetics. All rights reserved.
+          </p>
+          <button
+            onClick={() => setActivePolicy('privacy')}
+            className="text-sm text-cherry-text hover:text-cherry-700 whitespace-nowrap underline-offset-2 hover:underline transition-colors"
+          >
+            Privacy Policy
+          </button>
+          <button
+            onClick={() => setActivePolicy('terms')}
+            className="text-sm text-cherry-text hover:text-cherry-700 whitespace-nowrap underline-offset-2 hover:underline transition-colors"
+          >
+            Terms of Service
+          </button>
+          <span className="text-cherry-text/40 hidden sm:inline">·</span>
+          <p className="text-sm text-cherry-text/60 tracking-wide whitespace-nowrap">
+            Designed &amp; Developed by{' '}
+            <a
+              href="https://vynoq.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold transition-colors duration-300 hover:opacity-80"
+              style={{ color: '#800020' }}
+            >
+              Vynoq.com
+            </a>
+          </p>
+        </div>
+      </div>
     </footer>
+    </>
   );
 }

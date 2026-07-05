@@ -10,7 +10,6 @@ import {
   Sparkles,
   Truck,
   RotateCcw,
-  Tag,
   Zap,
   Clock,
   Gift,
@@ -20,6 +19,7 @@ import {
   Diamond,
   Eye,
   Microscope,
+  Tag,
 } from 'lucide-react';
 import { skinConcerns, dealBanners } from '@/data/mockData';
 import { ProductCard } from '@/components/ProductCard';
@@ -28,9 +28,17 @@ import { HeroCarousel } from '@/components/HeroCarousel';
 import { motion } from 'framer-motion';
 import { useAdminStore, LTO_THEME_MAP } from '@/store/useAdminStore';
 import { useCurrency } from '@/hooks/useCurrency';
+import * as LucideIcons from 'lucide-react';
+
+function FeatureIcon({ name, className }: { name: string; className?: string }) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const Icon = (LucideIcons as any)[name] as React.FC<{ className?: string }> | undefined;
+  if (!Icon) return <LucideIcons.Star className={className} />;
+  return <Icon className={className} />;
+}
 
 export default function HomePage() {
-  const { videos, products, limitedTimeOffers, categories } = useAdminStore();
+  const { videos, products, limitedTimeOffers, categories, featureItems, promoBarMessages } = useAdminStore();
   const { formatPrice } = useCurrency();
 
   const bestsellers = products.filter((p) => (p.sections ?? []).includes('bestsellers'));
@@ -53,13 +61,14 @@ export default function HomePage() {
     Microscope: <Microscope className="w-6 h-6" />,
   };
 
-  // Promotional ticker messages
-  const promoMessages = [
-    { icon: <Tag className="w-3.5 h-3.5 inline-block mr-1.5" />, text: 'Summer Sale LIVE — Up to 40% Off!' },
-    { icon: <Truck className="w-3.5 h-3.5 inline-block mr-1.5" />, text: `Free Shipping on Orders ${formatPrice(999)}+` },
-    { icon: <Gift className="w-3.5 h-3.5 inline-block mr-1.5" />, text: 'Free Mini Kit on First Order' },
-    { icon: <Star className="w-3.5 h-3.5 inline-block mr-1.5 fill-current" />, text: '10,000+ 5-Star Reviews' },
-  ];
+  // Promotional ticker messages — read from admin store, price auto-converts
+  const promoMessages = promoBarMessages
+    .filter((m) => m.active)
+    .map((m) => ({
+      text: m.priceINR != null
+        ? m.text.replace('{price}', formatPrice(m.priceINR))
+        : m.text,
+    }));
 
   return (
     <PageWrapper>
@@ -72,7 +81,6 @@ export default function HomePage() {
                 key={i}
                 className="text-xs sm:text-sm font-medium tracking-wide mx-8 inline-flex items-center"
               >
-                {msg.icon}
                 {msg.text}
               </span>
             ))}
@@ -86,17 +94,18 @@ export default function HomePage() {
         <section className="bg-white border-b border-cherry-100 py-4">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {[
-                { icon: <Truck className="w-5 h-5" />, title: 'Free Delivery', sub: `On orders ${formatPrice(999)}+` },
-                { icon: <ShieldCheck className="w-5 h-5" />, title: '100% Authentic', sub: 'Certified products' },
-                { icon: <RotateCcw className="w-5 h-5" />, title: 'Easy Returns', sub: '7-day policy' },
-                { icon: <Gift className="w-5 h-5" />, title: 'Free Samples', sub: 'With every order' },
-              ].map((item) => (
-                <div key={item.title} className="flex items-center gap-3 justify-center py-2">
-                  <span className="text-cherry-700">{item.icon}</span>
+              {featureItems.filter((f) => f.active).map((item) => (
+                <div key={item.id} className="flex items-center gap-3 justify-center py-2">
+                  <span className="text-cherry-700">
+                    <FeatureIcon name={item.icon} className="w-5 h-5" />
+                  </span>
                   <div>
                     <p className="text-sm font-semibold text-cherry-dark">{item.title}</p>
-                    <p className="text-xs text-cherry-text">{item.sub}</p>
+                    <p className="text-xs text-cherry-text">
+                      {item.minOrderINR != null
+                        ? `${item.sub} ${formatPrice(item.minOrderINR)}+`
+                        : item.sub}
+                    </p>
                   </div>
                 </div>
               ))}
@@ -145,28 +154,37 @@ export default function HomePage() {
         <section className="py-6 bg-[#FAF8F5]">
           <div className="w-full px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {dealBanners.map((deal, index) => (
-                <motion.div
-                  key={deal.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1, duration: 0.4 }}
-                >
-                  <Link
-                    href="/shop"
-                    className={`block w-full ${deal.bgColor} rounded-2xl p-5 hover:shadow-md transition-shadow border border-cherry-100/50`}
+              {dealBanners.map((deal, index) => {
+                // Replace {discount} / {minOrder} placeholders with the
+                // formatted price in the currently selected currency.
+                const resolveText = (template: string) =>
+                  template
+                    .replace('{discount}', deal.discountAmount != null ? formatPrice(deal.discountAmount) : '')
+                    .replace('{minOrder}', deal.minOrderAmount != null ? formatPrice(deal.minOrderAmount) : '');
+
+                return (
+                  <motion.div
+                    key={deal.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: index * 0.1, duration: 0.4 }}
                   >
-                    <div className="flex items-center gap-3">
-                      <Tag className={`w-8 h-8 ${deal.textColor}`} />
-                      <div>
-                        <p className={`font-bold text-base ${deal.textColor}`}>{deal.title}</p>
-                        <p className={`text-sm opacity-80 ${deal.textColor}`}>{deal.subtitle}</p>
+                    <Link
+                      href="/shop"
+                      className={`block w-full ${deal.bgColor} rounded-2xl p-5 hover:shadow-md transition-shadow border border-cherry-100/50`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Tag className={`w-8 h-8 ${deal.textColor}`} />
+                        <div>
+                          <p className={`font-bold text-base ${deal.textColor}`}>{resolveText(deal.title)}</p>
+                          <p className={`text-sm opacity-80 ${deal.textColor}`}>{resolveText(deal.subtitle)}</p>
+                        </div>
                       </div>
-                    </div>
-                  </Link>
-                </motion.div>
-              ))}
+                    </Link>
+                  </motion.div>
+                );
+              })}
             </div>
           </div>
         </section>

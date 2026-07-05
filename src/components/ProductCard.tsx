@@ -83,13 +83,13 @@ export function ProductCard({ product }: ProductCardProps) {
           <span className="text-xs text-cherry-text">({product.reviews})</span>
         </div>
 
-        <div className="flex items-center justify-between mt-3">
-          <div className="flex items-baseline gap-2">
-            <span className="font-semibold text-cherry-dark">
+        <div className="flex items-center justify-between gap-2 mt-3 min-w-0">
+          <div className="flex flex-col min-w-0 flex-1">
+            <span className="font-semibold text-cherry-dark text-sm sm:text-base truncate">
               {formatPrice(product.price)}
             </span>
             {product.originalPrice && (
-              <span className="text-sm text-cherry-text line-through">
+              <span className="text-xs text-cherry-text line-through truncate">
                 {formatPrice(product.originalPrice)}
               </span>
             )}
@@ -100,7 +100,7 @@ export function ProductCard({ product }: ProductCardProps) {
               e.preventDefault();
               addItem(product);
             }}
-            className="p-2.5 bg-white border border-cherry-200 rounded-full text-cherry-dark hover:bg-cherry-700 hover:text-white hover:border-cherry-700 transition-all"
+            className="flex-shrink-0 p-2.5 bg-white border border-cherry-200 rounded-full text-cherry-dark hover:bg-cherry-700 hover:text-white hover:border-cherry-700 transition-all"
             aria-label="Add to cart"
           >
             <ShoppingCart className="w-4 h-4" />

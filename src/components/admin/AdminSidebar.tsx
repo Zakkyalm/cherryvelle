@@ -16,15 +16,17 @@ import {
   Layers,
   AlertCircle,
   Settings,
+  Sparkles,
 } from 'lucide-react';
 
 const navItems = [
-  { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-  { label: 'Banners', href: '/admin/banners', icon: Images },
-  { label: 'Promo Bar', href: '/admin/promo-bar', icon: Megaphone },
-  { label: 'Products', href: '/admin/products', icon: Package },
-  { label: 'Sections', href: '/admin/sections', icon: Layers },
-  { label: 'Videos', href: '/admin/videos', icon: Video },
+  { label: 'Dashboard',   href: '/admin',              icon: LayoutDashboard },
+  { label: 'Banners',     href: '/admin/banners',       icon: Images },
+  { label: 'Promo Bar',   href: '/admin/promo-bar',     icon: Megaphone },
+  { label: 'Feature Bar', href: '/admin/feature-bar',   icon: Sparkles },
+  { label: 'Products',    href: '/admin/products',      icon: Package },
+  { label: 'Sections',    href: '/admin/sections',      icon: Layers },
+  { label: 'Videos',      href: '/admin/videos',        icon: Video },
 ];
 
 const bottomNavItems = [

@@ -102,13 +102,19 @@ export const dealBanners = [
     subtitle: 'On all serums & moisturizers',
     bgColor: 'bg-gradient-to-r from-cherry-100 to-cherry-50',
     textColor: 'text-cherry-800',
+    /** INR base amounts — null means this banner has no price values */
+    discountAmount: null as number | null,
+    minOrderAmount: null as number | null,
   },
   {
     id: 2,
-    title: 'Flat ₹200 Off',
-    subtitle: 'On orders above ₹1499',
+    /** titleTemplate: use {discount} as placeholder for formatted price */
+    title: 'Flat {discount} Off',
+    subtitle: 'On orders above {minOrder}',
     bgColor: 'bg-gradient-to-r from-amber-50 to-yellow-50',
     textColor: 'text-amber-800',
+    discountAmount: 200 as number | null,
+    minOrderAmount: 1499 as number | null,
   },
   {
     id: 3,
@@ -116,6 +122,8 @@ export const dealBanners = [
     subtitle: 'On all prepaid orders',
     bgColor: 'bg-gradient-to-r from-emerald-50 to-green-50',
     textColor: 'text-emerald-800',
+    discountAmount: null as number | null,
+    minOrderAmount: null as number | null,
   },
 ];
 
